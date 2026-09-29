@@ -39,6 +39,18 @@
     padding-top: env(safe-area-inset-top);
     height: calc(52px + env(safe-area-inset-top));
   }
+  .topbar { overflow-x: auto; scrollbar-width: none; }
+  .topbar::-webkit-scrollbar { display: none; }
+  .topbar > * { flex-shrink: 0; }
+  .topbar > .topbar-title { flex-shrink: 1; min-width: 40px; }
+  /* Sign out lives on the home screen for TMs; artists/crew get it everywhere */
+  .btn-signout { display: none; }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); border-radius: var(--radius); padding: 10px 16px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-danger:hover { background: var(--red); color: #0a0a0a; }
+  .danger-zone { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .danger-zone span { font-size: 12px; color: var(--dim); }
+  .readonly .danger-zone { display: none !important; }
+  .not-owner .owner-only { display: none !important; }
   .topbar-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; white-space: nowrap; }
   .topbar-back { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; padding: 4px 6px; white-space: nowrap; transition: color .15s; }
   .topbar-back:hover { color: var(--accent); }
@@ -613,7 +625,7 @@
     <button class="topbar-today" onclick="enterToday()">Today</button>
     <button class="topbar-action btn-export tm-only" onclick="toggleTeamPanel()" style="font-size:11px">👥 Team</button>
     <button class="topbar-action btn-export tm-only" onclick="showEditArtistForm()" style="font-size:11px">✏ Edit</button>
-    <button class="topbar-action btn-delete" onclick="deleteCurrentArtist()" style="font-size:11px">🗑</button>
+    <button class="topbar-action btn-delete owner-only" onclick="deleteCurrentArtist()" style="font-size:11px">🗑</button>
     <button class="topbar-action btn-sm btn-signout" onclick="logout()" style="font-size:11px;padding:5px 10px">Sign out</button>
   </div>
   <div class="artist-wrap">
@@ -628,6 +640,10 @@
       <div class="naf-actions">
         <button class="btn-primary" onclick="submitEditArtist()">Save →</button>
         <button class="btn-sm" onclick="hideEditArtistForm()">Cancel</button>
+      </div>
+      <div class="danger-zone owner-only">
+        <span>Deletes this artist, every show, and removes the whole team.</span>
+        <button class="btn-danger" onclick="deleteCurrentArtist()">Delete artist</button>
       </div>
     </div>
 
@@ -961,7 +977,7 @@
 <button class="remote-banner" id="remote-banner" onclick="applyPendingRemote()"></button>
 
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
 
 /* ============================================================================
    // OFFSTAGE — Tour Manager Dashboard (Supabase edition)
@@ -1018,7 +1034,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.29-2';
+const APP_VERSION = '2026.09.29-4';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1100,6 +1116,116 @@ function badgeOptions(selected) {
 }
 
 // ════════════════════════════════
+// SANITIZER — show data is shared, so treat everything in it as untrusted.
+// Anything that ends up inside an HTML attribute, a CSS class or an onclick
+// is forced into a known-safe shape here, once, when data comes in from the
+// database (initial load AND live updates). Free text is escaped at render.
+// ════════════════════════════════
+const ROS_TYPES   = ['rt-headliner','rt-opener','rt-changeover','rt-doors','rt-curfew','rt-other'];
+const GUEST_TIERS = ['ga','aa','vip'];
+const GUEST_STATS = ['confirmed','pending','denied'];
+const SAFE_ID     = /^[A-Za-z0-9_-]{1,40}$/;
+const SAFE_DATE   = /^\d{4}-\d{2}-\d{2}$/;
+const SAFE_DAYKEY = /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{4}$/;   // Date.toDateString()
+const SAFE_UUID   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SAFE_TOKEN  = /^[A-Za-z0-9]{8,64}$/;
+const SAFE_HEX    = /^#[0-9A-Fa-f]{6}$/;
+
+function str(v)         { return v == null ? '' : String(v).slice(0, 5000); }
+function safeId(v)      { return SAFE_ID.test(String(v || '')) ? String(v) : uid(); }
+function pick(v, list, fallback) { return list.includes(v) ? v : fallback; }
+function arr(v)         { return Array.isArray(v) ? v : []; }
+
+function cleanItems(list, shape) {
+  const seen = new Set();
+  return arr(list).filter(x => x && typeof x === 'object').map(x => {
+    const out = shape(x);
+    out.id = safeId(x.id);
+    if (seen.has(out.id)) out.id = uid();
+    seen.add(out.id);
+    return out;
+  });
+}
+function cleanAuthor(x) {
+  return {
+    author: str(x.author),
+    authorId: SAFE_UUID.test(String(x.authorId || '')) ? x.authorId : '',
+    authorEmail: str(x.authorEmail),
+  };
+}
+function cleanReactions(r) {
+  const out = {};
+  if (!r || typeof r !== 'object') return out;
+  for (const em of NOTE_REACTIONS) {
+    const list = arr(r[em]).map(String).filter(v => v.length <= 320);
+    if (list.length) out[em] = [...new Set(list)];
+  }
+  return out;
+}
+
+function sanitizeState(raw) {
+  const s = (raw && typeof raw === 'object') ? raw : {};
+  const schedules = {};
+  if (s.schedules && typeof s.schedules === 'object') {
+    for (const [k, v] of Object.entries(s.schedules)) {
+      if (!SAFE_DAYKEY.test(k)) continue;
+      schedules[k] = cleanItems(v, x => ({
+        time: str(x.time), title: str(x.title), sub: str(x.sub),
+        badge: pick(x.badge, BADGE_TYPES, 'b-off'),
+      }));
+    }
+  }
+  return {
+    ...s,
+    artist: str(s.artist),
+    tmName: str(s.tmName),
+    days: arr(s.days).map(String).filter(d => SAFE_DATE.test(d.split('T')[0])),
+    showDate: s.showDate && SAFE_DATE.test(String(s.showDate).split('T')[0]) ? s.showDate : null,
+    schedules,
+    ros: cleanItems(s.ros, x => ({
+      timeStart: str(x.timeStart), timeEnd: str(x.timeEnd), title: str(x.title), note: str(x.note),
+      type: pick(x.type, ROS_TYPES, 'rt-other'),
+    })),
+    contacts: cleanItems(s.contacts, x => ({
+      name: str(x.name), role: str(x.role), phone: str(x.phone),
+      color: Math.abs(parseInt(x.color, 10) || 0) % 5,
+    })),
+    crew: cleanItems(s.crew, x => ({ name: str(x.name), role: str(x.role), done: !!x.done })),
+    tasks: cleanItems(s.tasks, x => ({ text: str(x.text), day: str(x.day), done: !!x.done })),
+    notes: cleanItems(s.notes, x => ({
+      txt: str(x.txt), day: str(x.day), time: str(x.time), ...cleanAuthor(x),
+      reactions: cleanReactions(x.reactions),
+      replies: cleanItems(x.replies, r => ({ txt: str(r.txt), time: str(r.time), ...cleanAuthor(r) })),
+    })),
+    venues: cleanItems(s.venues, x => ({
+      name: str(x.name), day: str(x.day), address: str(x.address), contact: str(x.contact),
+      phone: str(x.phone), loadin: str(x.loadin), capacity: str(x.capacity), parking: str(x.parking),
+      greenrm: str(x.greenrm), stage: str(x.stage), notes: str(x.notes),
+    })),
+    lodging: cleanItems(s.lodging, x => ({
+      name: str(x.name), address: str(x.address), checkin: str(x.checkin),
+      checkout: str(x.checkout), conf: str(x.conf), notes: str(x.notes),
+    })),
+    guests: cleanItems(s.guests, x => ({
+      first: str(x.first), last: str(x.last), note: str(x.note),
+      tier: pick(x.tier, GUEST_TIERS, 'ga'), status: pick(x.status, GUEST_STATS, 'pending'),
+    })),
+    flights: cleanItems(s.flights, x => ({
+      date: SAFE_DATE.test(String(x.date || '')) ? x.date : '',
+      pax: str(x.pax), airline: str(x.airline), from: str(x.from), to: str(x.to),
+      depart: str(x.depart), arrive: str(x.arrive), conf: str(x.conf), note: str(x.note),
+    })),
+  };
+}
+function sanitizeRider(r) {
+  r = (r && typeof r === 'object') ? r : {};
+  return {
+    tech: cleanItems(r.tech, x => ({ text: str(x.text) })),
+    hosp: cleanItems(r.hosp, x => ({ text: str(x.text) })),
+  };
+}
+
+// ════════════════════════════════
 // IDENTITY — names + colors for people
 // ════════════════════════════════
 function _hashColor(str) {
@@ -1111,7 +1237,7 @@ function _hashColor(str) {
 // key = user id (new data) or email (legacy data)
 function getAuthorColor(key) {
   const p = key && profilesById[key];
-  if (p && p.color) return p.color;
+  if (p && SAFE_HEX.test(p.color || '')) return p.color;
   return _hashColor(String(key || 'unknown').toLowerCase());
 }
 function firstName(full) { return (full || '').trim().split(/\s+/)[0] || ''; }
@@ -1290,9 +1416,14 @@ async function loadMyRoles() {
 }
 
 // Toggle read-only UI for the artist being viewed.
+function ownerOf(artistId) {
+  const a = (_artistsCache || []).find(x => x.id === artistId);
+  return a ? a.createdBy : null;
+}
 function applyRole(artistId) {
   currentRole = artistId ? (myRoles[artistId] || null) : null;
   document.body.classList.toggle('readonly', !!artistId && currentRole !== 'tm');
+  document.body.classList.toggle('not-owner', !!artistId && ownerOf(artistId) !== myUid);
 }
 
 async function logout() {
@@ -1316,8 +1447,8 @@ function bustAllCaches() { _artistsCache = null; _showsCache = {}; _showStateCac
 async function getArtists() {
   if (_artistsCache) return _artistsCache;
   try {
-    const rows = must(await sb.from('artists').select('id, name, tm_name, created_at').order('created_at'), 'Load artists');
-    _artistsCache = rows.map(r => ({ id: r.id, name: r.name, tmName: r.tm_name || '' }));
+    const rows = must(await sb.from('artists').select('id, name, tm_name, created_by, created_at').order('created_at'), 'Load artists');
+    _artistsCache = rows.map(r => ({ id: r.id, name: r.name, tmName: r.tm_name || '', createdBy: r.created_by }));
     return _artistsCache;
   } catch (e) { console.error(e); return []; }
 }
@@ -1337,22 +1468,12 @@ async function deleteArtistRow(id) {
 
 // ── Shows ──
 function parseShowRow(row) {
-  const s = { ...(row.state || {}) };
+  const s = sanitizeState(row.state);
   s.id = row.id;
   s.artistId = row.artist_id;
-  s.name = row.name;
-  s.days = (s.days || []).map(d => parseLocalDate(d)).filter(Boolean);
+  s.name = str(row.name);
+  s.days = s.days.map(d => parseLocalDate(d)).filter(Boolean);
   s.showDate = row.show_date ? parseLocalDate(row.show_date) : (s.showDate ? parseLocalDate(s.showDate) : null);
-  s.contacts  = s.contacts  || [];
-  s.crew      = s.crew      || [];
-  s.tasks     = s.tasks     || [];
-  s.notes     = s.notes     || [];
-  s.ros       = s.ros       || [];
-  s.venues    = s.venues    || [];
-  s.lodging   = s.lodging   || [];
-  s.schedules = s.schedules || {};
-  s.guests    = s.guests    || [];
-  s.flights   = s.flights   || [];
   return s;
 }
 function serializeState(s) {
@@ -1426,8 +1547,7 @@ function saveState() {
 // ── Rider ──
 async function loadRider(artistId) {
   const { data } = await sb.from('artist_riders').select('data').eq('artist_id', artistId).maybeSingle();
-  const r = data?.data || {};
-  return { tech: r.tech || [], hosp: r.hosp || [] };
+  return sanitizeRider(data?.data);
 }
 
 // ── Team (members + their profiles) ──
@@ -1837,7 +1957,7 @@ async function renderHome() {
         <div class="artist-card-meta">TM: ${esc(a.tmName) || '—'}${roleTag}</div>
         <div class="artist-card-shows">${showCount} show${showCount !== 1 ? 's' : ''}${nextShow}</div>
       </div>
-      ${role === 'tm' ? `<button class="artist-card-del" onclick="event.stopPropagation();deleteArtist('${a.id}')" title="Delete artist">×</button>` : ''}
+      ${role === 'tm' && a.createdBy === myUid ? `<button class="artist-card-del" onclick="event.stopPropagation();deleteArtist('${a.id}')" title="Delete artist">×</button>` : ''}
     </div>`;
   }));
   list.innerHTML = rows.join('');
@@ -1939,16 +2059,17 @@ async function renderTeam() {
     const p = m.profile || {};
     const name = p.display_name || p.email || 'Unknown';
     const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
-    const av = p.avatar_url ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">` : esc(initials);
+    const av = /^https:\/\//.test(p.avatar_url || '') ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">` : esc(initials);
     const isMe = m.user_id === myUid;
+    const isOwner = m.user_id === ownerOf(currentArtistId);
     return `<div class="team-row">
       <div class="team-av" style="background:${getAuthorColor(m.user_id)}">${av}</div>
       <div class="team-body">
         <div class="team-name">${esc(name)}${isMe ? ' <span style="color:var(--dim);font-weight:400">(you)</span>' : ''}</div>
         <div class="team-email">${esc(p.email || '')}</div>
       </div>
-      <span class="role-chip role-${m.role}">${m.role === 'tm' ? 'TM' : m.role}</span>
-      ${isMe ? '' : `<button class="contact-del" onclick="removeMember('${m.user_id}')" title="Remove from team">×</button>`}
+      <span class="role-chip role-${m.role === 'tm' ? 'tm' : m.role === 'artist' ? 'artist' : 'crew'}">${isOwner ? 'Owner' : m.role === 'tm' ? 'TM' : esc(m.role)}</span>
+      ${isMe || isOwner ? '' : `<button class="contact-del" onclick="removeMember('${esc(m.user_id)}')" title="Remove from team">×</button>`}
     </div>`;
   }).join('');
   await renderInvites();
@@ -1990,6 +2111,7 @@ async function renderInvites() {
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false }), 'Load invites');
   } catch (e) { list.innerHTML = `<div class="empty-state">${esc(e.message)}</div>`; return; }
+  rows = rows.filter(i => SAFE_TOKEN.test(i.token || ''));
   if (!rows.length) {
     list.innerHTML = '<div class="empty-state" style="padding:.75rem 0">No active invite links.</div>';
     return;
@@ -2061,6 +2183,10 @@ async function renderArtistScreen(artistId) {
         <div class="sef-actions">
           <button class="btn-primary" onclick="submitEditShow('${s.id}')">Save →</button>
           <button class="btn-sm" onclick="hideEditShowForm('${s.id}')">Cancel</button>
+        </div>
+        <div class="danger-zone">
+          <span>Permanently deletes this show for everyone.</span>
+          <button class="btn-danger" onclick="deleteShow('${artistId}','${s.id}')">Delete show</button>
         </div>
       </div>
     </div>`;
@@ -2216,12 +2342,12 @@ async function openShow(showId) {
   currentShowId = showId;
   state = saved;
   if (!currentArtistId || currentArtistId !== saved.artistId) currentArtistId = saved.artistId;
-  applyRole(currentArtistId);
   try {
     const artists = await getArtists();
     currentArtist = artists.find(a => a.id === currentArtistId) || null;
     if (currentArtist) currentArtist.rider = await loadRider(currentArtistId);
   } catch (e) { currentArtist = null; }
+  applyRole(currentArtistId);
   try { await loadTeam(currentArtistId); } catch (e) { console.warn(e); }
   buildApp();
   showScreen('app');
