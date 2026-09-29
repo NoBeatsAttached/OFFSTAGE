@@ -54,6 +54,7 @@
   .danger-zone span { font-size: 12px; color: var(--dim); }
   .readonly .danger-zone { display: none !important; }
   .not-owner .owner-only { display: none !important; }
+  .no-create #btn-new-artist, .no-create #new-artist-form { display: none !important; }
   .topbar-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--accent-ink); text-transform: uppercase; white-space: nowrap; }
   .topbar-back { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; padding: 4px 6px; white-space: nowrap; transition: color .15s; }
   .topbar-back:hover { color: var(--accent-ink); }
@@ -1302,7 +1303,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.30-3';
+const APP_VERSION = '2026.09.30-4';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1668,6 +1669,10 @@ async function handleAuthSuccess(user) {
 
   bustAllCaches();
   await loadMyRoles();
+  // Re-read the profile: redeeming an invite can change the account type.
+  const prof2 = await sb.from('profiles').select('*').eq('id', myUid).maybeSingle();
+  if (prof2.data) { myProfile = prof2.data; profilesById[myUid] = myProfile; }
+  applyAccountType();
 
   if (joinedArtistId) { await openArtist(joinedArtistId); return; }
 
@@ -1682,6 +1687,11 @@ async function loadMyRoles() {
   myRoles = {};
   rows.forEach(r => { myRoles[r.artist_id] = r.role; });
 }
+
+// Crew/artist accounts (joined by invite) can't create artists — the database
+// enforces it; this just hides the controls.
+function canCreateArtists() { return !myProfile || myProfile.can_create_artists !== false; }
+function applyAccountType() { document.body.classList.toggle('no-create', !canCreateArtists()); }
 
 // Toggle read-only UI for the artist being viewed.
 function ownerOf(artistId) {
@@ -1702,7 +1712,7 @@ async function logout() {
   myUid = null; myEmail = ''; myProfile = null; myRoles = {}; profilesById = {}; _teamCache = {};
   currentRole = null; currentArtistId = null; currentShowId = null; state = null;
   bustAllCaches();
-  document.body.classList.remove('readonly');
+  document.body.classList.remove('readonly', 'no-create', 'not-owner');
   showLoginScreen();
 }
 
@@ -2200,11 +2210,15 @@ async function goToArtist() {
 // ════════════════════════════════
 async function renderHome() {
   const sub = document.getElementById('home-sub');
-  if (sub) sub.textContent = `Signed in as ${myEmail}. Tap an artist to manage their shows.`;
+  if (sub) sub.textContent = canCreateArtists()
+    ? `Signed in as ${myEmail}. Tap an artist to manage their shows.`
+    : `Signed in as ${myEmail}. These are the artists you've been added to.`;
   const artists = await getArtists();
   const list = document.getElementById('artist-list');
   if (!artists.length) {
-    list.innerHTML = '<div class="empty-state">No artists yet. Add one below — you\'ll be its TM.</div>';
+    list.innerHTML = canCreateArtists()
+      ? '<div class="empty-state">No artists yet. Add one below — you\'ll be its TM.</div>'
+      : '<div class="empty-state">You\'re not on a team yet. Ask your tour manager for an invite link.</div>';
     return;
   }
   const rows = await Promise.all(artists.map(async (a, i) => {
@@ -2260,6 +2274,7 @@ async function submitEditArtist() {
 
 // ── New artist ──
 function showNewArtistForm() {
+  if (!canCreateArtists()) return;
   document.getElementById('new-artist-form').style.display = 'block';
   document.getElementById('btn-new-artist').style.display = 'none';
   document.getElementById('naf-name').value = '';
