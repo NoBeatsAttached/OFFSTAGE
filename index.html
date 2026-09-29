@@ -740,6 +740,16 @@
     .app-rail { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: 340px; box-sizing: border-box; padding: 24px 20px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; z-index: 150; }
   }
 
+  /* Audience chips + View as */
+  .aud-chip { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+  .aud-artist { background: var(--teal-dim); color: var(--teal); }
+  .aud-crew { background: var(--blue-dim); color: var(--blue); }
+  .view-as { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .view-as label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+  .view-as select { min-height: 36px; padding: 0 12px; font-size: 13px; }
+  .preview-note { font-size: 12px; color: var(--accent-ink); }
+  body.previewing .show-head { box-shadow: inset 4px 0 0 var(--accent); }
+
   /* Version history modal */
   .hist-modal { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
   .hist-box { max-width: 560px; max-height: 84vh; overflow-y: auto; }
@@ -968,6 +978,15 @@
   </div>
   <div class="show-head">
     <h1 class="show-title" id="tb-title">—</h1>
+    <div class="view-as tm-only">
+      <label for="view-as">View as</label>
+      <select id="view-as" onchange="setViewAs(this.value)">
+        <option value="tm">Everything (TM)</option>
+        <option value="artist">Artist</option>
+        <option value="crew">Crew</option>
+      </select>
+      <span id="preview-banner" class="preview-note"></span>
+    </div>
   </div>
   <div class="stat-row">
     <div class="stat"><div class="stat-num" id="s-days-display">—</div><div class="stat-lbl">Days</div></div>
@@ -1077,6 +1096,7 @@
         <input id="c-name" placeholder="Name">
         <input id="c-role" placeholder="Role (FOH, Venue PM…)">
         <input id="c-phone" placeholder="Phone / email">
+        <select id="c-aud" aria-label="Who sees this" style="max-width:140px"></select>
         <button class="btn-add" onclick="addContact()">Add</button>
       </div>
       <hr class="divider">
@@ -1135,6 +1155,7 @@
       <textarea id="note-input" placeholder="Add a note…" style="margin-top:10px;min-height:42px;max-height:240px;resize:none" oninput="autoGrow(this)"></textarea>
       <div class="add-row gl-add-row" style="margin-top:8px">
         <select id="note-day-sel" style="max-width:160px"></select>
+        <select id="note-aud" aria-label="Who sees this note" style="max-width:150px"></select>
         <button class="btn-add" onclick="saveNote()">Save note</button>
       </div>
     </div>
@@ -1180,6 +1201,7 @@
         <input id="fl-arrive"  placeholder="Arrives (e.g. Jun 10, 1:32p)">
         <input id="fl-conf"    placeholder="Confirmation #" class="loc-span2">
         <input id="fl-note"    placeholder="Note (seat, terminal, etc.)" class="loc-span2">
+        <select id="fl-aud" class="loc-span2" aria-label="Who sees this flight"></select>
       </div>
       <div class="add-row" style="margin-top:8px">
         <button class="btn-add" onclick="addFlight()">Add flight</button>
@@ -1212,6 +1234,14 @@
     <div class="modal-box">
       <div class="modal-title">Export Itinerary PDF</div>
       <div class="modal-sub">Choose what to include.</div>
+      <div class="field-group tm-only" style="margin-bottom:1rem">
+        <label class="field-label" for="ex-aud">Version</label>
+        <select id="ex-aud" style="width:100%">
+          <option value="tm">Full — everything (TM)</option>
+          <option value="artist">Artist itinerary</option>
+          <option value="crew">Crew itinerary</option>
+        </select>
+      </div>
       <div class="export-checks">
         <label class="export-check"><input type="checkbox" id="ex-itinerary" checked> Daily Itinerary</label>
         <label class="export-check"><input type="checkbox" id="ex-ros" checked> Run of Show</label>
@@ -1303,7 +1333,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.30-4';
+const APP_VERSION = '2026.09.30-5';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1392,6 +1422,7 @@ function badgeOptions(selected) {
 // ════════════════════════════════
 const ROS_TYPES   = ['rt-headliner','rt-opener','rt-changeover','rt-doors','rt-curfew','rt-other'];
 const GUEST_TIERS = ['ga','aa','vip'];
+const AUDS        = ['all','artist','crew'];   // who can see an item
 const GUEST_STATS = ['confirmed','pending','denied'];
 const SAFE_ID     = /^[A-Za-z0-9_-]{1,40}$/;
 const SAFE_DATE   = /^\d{4}-\d{2}-\d{2}$/;
@@ -1440,7 +1471,7 @@ function sanitizeState(raw) {
       if (!SAFE_DAYKEY.test(k)) continue;
       schedules[k] = cleanItems(v, x => ({
         time: str(x.time), title: str(x.title), sub: str(x.sub),
-        badge: pick(x.badge, BADGE_TYPES, 'b-off'),
+        badge: pick(x.badge, BADGE_TYPES, 'b-off'), aud: pick(x.aud, AUDS, 'all'),
       }));
     }
   }
@@ -1457,12 +1488,13 @@ function sanitizeState(raw) {
     })),
     contacts: cleanItems(s.contacts, x => ({
       name: str(x.name), role: str(x.role), phone: str(x.phone),
-      color: Math.abs(parseInt(x.color, 10) || 0) % 5,
+      color: Math.abs(parseInt(x.color, 10) || 0) % 5, aud: pick(x.aud, AUDS, 'all'),
     })),
     crew: cleanItems(s.crew, x => ({ name: str(x.name), role: str(x.role), done: !!x.done })),
     tasks: cleanItems(s.tasks, x => ({ text: str(x.text), day: str(x.day), done: !!x.done })),
     notes: cleanItems(s.notes, x => ({
       txt: str(x.txt), day: str(x.day), time: str(x.time), ...cleanAuthor(x),
+      aud: pick(x.aud, AUDS, 'all'), ts: Number.isFinite(+x.ts) ? +x.ts : 0,
       reactions: cleanReactions(x.reactions),
       replies: cleanItems(x.replies, r => ({ txt: str(r.txt), time: str(r.time), ...cleanAuthor(r) })),
     })),
@@ -1483,6 +1515,7 @@ function sanitizeState(raw) {
       date: SAFE_DATE.test(String(x.date || '')) ? x.date : '',
       pax: str(x.pax), airline: str(x.airline), from: str(x.from), to: str(x.to),
       depart: str(x.depart), arrive: str(x.arrive), conf: str(x.conf), note: str(x.note),
+      aud: pick(x.aud, AUDS, 'all'),
     })),
   };
 }
@@ -1745,14 +1778,51 @@ async function deleteArtistRow(id) {
 }
 
 // ── Shows ──
-function parseShowRow(row) {
+// ── Private parts ─────────────────────────────────────────────
+// Items tagged Artist only / Crew only live in show_private, which the
+// database only hands to that group + TMs. In memory everything is one
+// state; split on save, merged on load. PRIVATE_KEYS are the only lists
+// that can be private.
+const PRIVATE_KEYS = ['flights', 'notes', 'contacts'];
+function mergePrivate(s, privRows) {
+  for (const pr of privRows || []) {
+    const aud = pr.audience;
+    if (aud !== 'artist' && aud !== 'crew') continue;
+    const p = sanitizeState(pr.state);
+    for (const [k, items] of Object.entries(p.schedules)) {
+      s.schedules[k] = [...(s.schedules[k] || []), ...items.map(it => ({ ...it, aud }))];
+    }
+    for (const key of PRIVATE_KEYS) s[key] = [...s[key], ...p[key].map(it => ({ ...it, aud }))];
+  }
+  s.notes.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return s;
+}
+function splitState(s) {
+  const shared = serializeState(s);
+  const parts = { artist: { schedules: {}, flights: [], notes: [], contacts: [] },
+                  crew:   { schedules: {}, flights: [], notes: [], contacts: [] } };
+  const isShared = it => (it.aud || 'all') === 'all';
+  const sched = {};
+  for (const [k, items] of Object.entries(shared.schedules || {})) {
+    sched[k] = items.filter(isShared);
+    items.forEach(it => { if (it.aud === 'artist' || it.aud === 'crew') (parts[it.aud].schedules[k] = parts[it.aud].schedules[k] || []).push(it); });
+  }
+  shared.schedules = sched;
+  for (const key of PRIVATE_KEYS) {
+    const all = shared[key] || [];
+    shared[key] = all.filter(isShared);
+    all.forEach(it => { if (it.aud === 'artist' || it.aud === 'crew') parts[it.aud][key].push(it); });
+  }
+  return { shared, parts };
+}
+function parseShowRow(row, privRows) {
   const s = sanitizeState(row.state);
   s.id = row.id;
   s.artistId = row.artist_id;
   s.name = str(row.name);
   s.days = s.days.map(d => parseLocalDate(d)).filter(Boolean);
   s.showDate = row.show_date ? parseLocalDate(row.show_date) : (s.showDate ? parseLocalDate(s.showDate) : null);
-  return s;
+  return mergePrivate(s, privRows);
 }
 function serializeState(s) {
   const out = {
@@ -1763,13 +1833,36 @@ function serializeState(s) {
   delete out.id; delete out.artistId;
   return out;
 }
-// Light show list for an artist. Also warms the full-state cache (one query).
+// What we last read/wrote per show part, so a save only sends what changed.
+const _lastSaved = {};
+function snapshotParts(s) {
+  const { shared, parts } = splitState(s);
+  return {
+    all: JSON.stringify({ name: s.name, show_date: s.showDate ? toLocalDateStr(s.showDate) : null, state: shared }),
+    artist: JSON.stringify(parts.artist), crew: JSON.stringify(parts.crew),
+    shared, parts,
+  };
+}
+function rememberSaved(showId, s) {
+  const snap = snapshotParts(s);
+  _lastSaved[showId] = { all: snap.all, artist: snap.artist, crew: snap.crew };
+}
+async function fetchPrivate(showIds) {
+  if (!showIds.length) return {};
+  const { data, error } = await sb.from('show_private').select('show_id, audience, state').in('show_id', showIds);
+  if (error) { console.warn('private parts not loaded:', error.message); return {}; }
+  const by = {};
+  (data || []).forEach(r => { (by[r.show_id] = by[r.show_id] || []).push(r); });
+  return by;
+}
+// Light show list for an artist. Also warms the full-state cache.
 async function getShows(artistId) {
   if (_showsCache[artistId]) return _showsCache[artistId];
   try {
     const rows = must(await sb.from('shows').select('*').eq('artist_id', artistId)
       .order('show_date', { ascending: true, nullsFirst: false }), 'Load shows');
-    rows.forEach(r => { _showStateCache[r.id] = parseShowRow(r); });
+    const priv = await fetchPrivate(rows.map(r => r.id));
+    rows.forEach(r => { const st = parseShowRow(r, priv[r.id]); _showStateCache[r.id] = st; rememberSaved(r.id, st); });
     _showsCache[artistId] = rows.map(r => ({ id: r.id, name: r.name, showDate: r.show_date }));
     return _showsCache[artistId];
   } catch (e) { console.error(e); return []; }
@@ -1780,31 +1873,53 @@ async function getShowState(showId, force) {
   const { data, error } = await sb.from('shows').select('*').eq('id', showId).maybeSingle();
   if (error) { console.error('getShowState failed:', error); throw error; }
   if (!data) return null;
-  const s = parseShowRow(data);
+  const priv = await fetchPrivate([showId]);
+  const s = parseShowRow(data, priv[showId]);
   _showStateCache[showId] = s;
+  rememberSaved(showId, s);
   return s;
 }
 async function insertShow(artistId, id, s) {
   _showsCache[artistId] = null;
+  s.id = id; s.artistId = artistId;
+  const snap = snapshotParts(s);
   must(await sb.from('shows').insert({
     id, artist_id: artistId, name: s.name,
     show_date: s.showDate ? toLocalDateStr(s.showDate) : null,
-    state: serializeState(s),
+    state: snap.shared,
   }), 'Create show');
-  s.id = id; s.artistId = artistId;
+  for (const aud of ['artist', 'crew']) {
+    const part = snap.parts[aud];
+    if (Object.keys(part.schedules).length || PRIVATE_KEYS.some(k => part[k].length)) {
+      must(await sb.from('show_private').upsert({ show_id: id, audience: aud, state: part }, { onConflict: 'show_id,audience' }), 'Save private part');
+    }
+  }
   _showStateCache[id] = s;
+  rememberSaved(id, s);
 }
 async function saveShowState(showId, s) {
   _showStateCache[showId] = s;
+  const snap = snapshotParts(s);
+  const last = _lastSaved[showId] || {};
+  const role = myRoles[s.artistId];
   const showDateStr = s.showDate ? toLocalDateStr(s.showDate) : null;
-  const { error } = await sb.from('shows')
-    .update({ name: s.name, show_date: showDateStr, state: serializeState(s) })
-    .eq('id', showId);
-  if (error) {
+  try {
+    if (snap.all !== last.all) {
+      const { error } = await sb.from('shows').update({ name: s.name, show_date: showDateStr, state: snap.shared }).eq('id', showId);
+      if (error) throw error;
+    }
+    for (const aud of ['artist', 'crew']) {
+      if (role !== 'tm' && role !== aud) continue;          // never write a part you can't see
+      if (snap[aud] === last[aud]) continue;
+      const { error } = await sb.from('show_private').upsert({ show_id: showId, audience: aud, state: snap.parts[aud] }, { onConflict: 'show_id,audience' });
+      if (error) throw error;
+    }
+  } catch (error) {
     console.error('saveShowState FAILED:', error);
-    alert('Could not save changes: ' + error.message + '\n\nYour change may be lost on refresh. Check your connection.');
+    alert('Could not save changes: ' + (error.message || error) + '\n\nYour change may be lost on refresh. Check your connection.');
     throw error;
   }
+  _lastSaved[showId] = { all: snap.all, artist: snap.artist, crew: snap.crew };
   const list = s.artistId && _showsCache[s.artistId];
   if (list) { const m = list.find(x => x.id === showId); if (m) { m.name = s.name; m.showDate = showDateStr; } }
 }
@@ -1851,20 +1966,25 @@ let _pendingRemote = null;
 
 function subscribeShow(showId) {
   unsubscribeShow();
+  const onChange = payload => {
+    const row = payload.new || {};
+    if (row.updated_by && row.updated_by === myUid) return;   // our own save echoing back
+    clearTimeout(_remoteTimer);
+    _remoteTimer = setTimeout(async () => {                    // coalesce bursts, then re-read both parts
+      if (currentShowId !== showId) return;
+      let fresh;
+      try { fresh = await getShowState(showId, true); } catch { return; }
+      if (!fresh || currentShowId !== showId) return;
+      if (isUserEditing()) { showRemoteBanner(fresh, nameFor(row.updated_by)); return; }
+      applyRemoteState(fresh);
+    }, 250);
+  };
   _showChannel = sb.channel('show-' + showId)
-    .on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'shows', filter: `id=eq.${showId}` },
-      payload => {
-        const row = payload.new;
-        if (!row || row.id !== currentShowId) return;
-        if (row.updated_by === myUid) return;           // our own save echoing back
-        const fresh = parseShowRow(row);
-        _showStateCache[row.id] = fresh;
-        if (isUserEditing()) { showRemoteBanner(fresh, nameFor(row.updated_by)); return; }
-        applyRemoteState(fresh);
-      })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shows', filter: `id=eq.${showId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'show_private', filter: `show_id=eq.${showId}` }, onChange)
     .subscribe();
 }
+let _remoteTimer = null;
 function unsubscribeShow() {
   if (_showChannel) { try { sb.removeChannel(_showChannel); } catch {} }
   _showChannel = null;
@@ -2034,7 +2154,7 @@ async function renderToday() {
 
   const targetStr = today.toDateString();
   const todayKey = targetStr;
-  const schedItems = sortSchedule(s.schedules?.[todayKey] || []);
+  const schedItems = sortSchedule(s.schedules?.[todayKey] || []).filter(shown);
   const isShowDay = match.isShowDay;
   const rosItems = isShowDay ? sortRos(s.ros || []) : [];
 
@@ -2045,7 +2165,7 @@ async function renderToday() {
     if (m !== 9999 && m >= nowMins) { nextUp = { item, mins: m }; break; }
   }
 
-  const recentNotes = (s.notes || []).slice(0, 5);
+  const recentNotes = (s.notes || []).filter(shown).slice(0, 5);
 
   let html = '';
 
@@ -2624,6 +2744,7 @@ async function openShow(showId) {
     alert('This show could not be found. It may have been deleted, or you may no longer have access.');
     return;
   }
+  if (currentShowId !== showId) { viewAs = 'tm'; document.body.classList.remove('previewing'); }
   currentShowId = showId;
   state = saved;
   if (!currentArtistId || currentArtistId !== saved.artistId) currentArtistId = saved.artistId;
@@ -2707,7 +2828,7 @@ function renderRail() {
     card = `<div class="rail-next quiet"><span class="rn-label">SHOW DAY</span><span class="rn-big">Not set</span></div>`;
   }
   next.innerHTML = card;
-  const notes = (state.notes || []).slice(0, 5);
+  const notes = (state.notes || []).filter(shown).slice(0, 5);
   list.innerHTML = notes.length ? notes.map(n => {
     const replies = (n.replies || []).length;
     return `<div class="rail-note"><div class="rn-meta">${noteAuthorChip(n)}<span>${esc(n.time)}</span>${replies ? `<span>· ${replies} repl${replies === 1 ? 'y' : 'ies'}</span>` : ''}</div><p>${esc(n.txt)}</p></div>`;
@@ -2720,7 +2841,7 @@ function railPostNote() {
   if (!txt || !state) return;
   const today = (state.days || []).find(d => d.toDateString() === new Date().toDateString());
   state.notes.unshift({
-    id: uid(), txt, day: today ? dayLabel(today) : 'All days',
+    id: uid(), txt, day: today ? dayLabel(today) : 'All days', aud: 'all', ts: Date.now(),
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     author: myDisplayName(), authorId: myUid, authorEmail: myEmail, reactions: {}, replies: [],
   });
@@ -2733,12 +2854,14 @@ function railPostNote() {
 // VERSION HISTORY + RECENTLY DELETED (TMs only; the database enforces it)
 // Every change to a show saves the version BEFORE it (last 100 per show).
 // ════════════════════════════════
-function histSummary(st) {
+function histSummary(st, audience) {
   const s = sanitizeState(st || {});
   const sched = Object.values(s.schedules).reduce((n, l) => n + l.length, 0);
-  const bits = [`${sched} schedule`, `${s.notes.length} notes`, `${s.guests.length} guests`, `${s.contacts.length} contacts`];
+  const bits = [`${sched} schedule`, `${s.notes.length} notes`, `${s.flights.length} flights`, `${s.contacts.length} contacts`];
+  if (!audience || audience === 'all') bits.splice(2, 0, `${s.guests.length} guests`);
   return bits.join(' · ');
 }
+const AUD_PART_LABEL = { all: 'Shared', artist: 'Artist-only items', crew: 'Crew-only items' };
 function fmtWhen(iso) {
   const d = new Date(iso);
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2756,8 +2879,8 @@ async function openHistory() {
   if (!currentShowId) return;
   openHistoryModal('Version history', 'Each entry is how the show looked just before someone changed it. Restoring keeps a copy of the current version, so you can undo a restore.');
   const { data, error } = await sb.from('show_history')
-    .select('id, name, show_date, state, changed_at, changed_by, action')
-    .eq('show_id', currentShowId).order('id', { ascending: false }).limit(60);
+    .select('id, name, show_date, state, changed_at, changed_by, action, audience')
+    .eq('show_id', currentShowId).order('id', { ascending: false }).limit(90);
   const list = document.getElementById('hist-list');
   if (error) { list.innerHTML = `<div class="empty-state">${esc(error.message)}</div>`; return; }
   _histRows = data || [];
@@ -2765,8 +2888,8 @@ async function openHistory() {
   list.innerHTML = _histRows.map((r, i) => `
     <div class="hist-row">
       <div class="hist-main">
-        <span class="hist-when">${esc(fmtWhen(r.changed_at))}</span>
-        <span class="hist-what">Before ${esc(nameFor(r.changed_by))}'s change · ${esc(histSummary(r.state))}</span>
+        <span class="hist-when">${esc(fmtWhen(r.changed_at))}${(r.audience && r.audience !== 'all') ? `<span class="aud-chip aud-${r.audience}">${r.audience === 'artist' ? 'ARTIST ONLY' : 'CREW ONLY'}</span>` : ''}</span>
+        <span class="hist-what">${esc(AUD_PART_LABEL[r.audience || 'all'])} · before ${esc(nameFor(r.changed_by))}'s change · ${esc(histSummary(r.state, r.audience))}</span>
       </div>
       <button class="pill-btn" onclick="restoreVersion(${i})">Restore</button>
     </div>`).join('');
@@ -2775,8 +2898,14 @@ async function openHistory() {
 async function restoreVersion(i) {
   const r = _histRows[i];
   if (!r || !currentShowId) return;
-  if (!confirm(`Restore the show to how it was on ${fmtWhen(r.changed_at)}?\n\nEveryone on the team will see it. The current version is kept in history, so you can undo this.`)) return;
-  const restored = parseShowRow({ id: currentShowId, artist_id: state.artistId, name: r.name, show_date: r.show_date, state: r.state });
+  const part = r.audience || 'all';
+  if (!confirm(`Restore the ${AUD_PART_LABEL[part].toLowerCase()} to how they were on ${fmtWhen(r.changed_at)}?\n\nOnly that part changes. The current version is kept in history, so you can undo this.`)) return;
+  const cur = splitState(state);
+  const sharedRow = part === 'all'
+    ? { id: currentShowId, artist_id: state.artistId, name: r.name, show_date: r.show_date, state: r.state }
+    : { id: currentShowId, artist_id: state.artistId, name: state.name, show_date: state.showDate ? toLocalDateStr(state.showDate) : null, state: cur.shared };
+  const priv = ['artist', 'crew'].map(a => ({ audience: a, state: (part === a) ? r.state : cur.parts[a] }));
+  const restored = parseShowRow(sharedRow, priv);
   state = restored;
   try { await saveShowState(currentShowId, restored); } catch { return; }
   _showsCache[currentArtistId] = null;
@@ -2789,8 +2918,8 @@ async function openDeletedShows() {
   openHistoryModal('Recently deleted shows', 'Shows deleted from this artist. Restoring brings the show back exactly as it was when it was deleted.');
   const list = document.getElementById('hist-list');
   const { data, error } = await sb.from('show_history')
-    .select('id, show_id, name, show_date, state, changed_at, changed_by, action')
-    .eq('artist_id', currentArtistId).eq('action', 'delete').order('id', { ascending: false }).limit(50);
+    .select('id, show_id, name, show_date, state, changed_at, changed_by, action, audience')
+    .eq('artist_id', currentArtistId).eq('action', 'delete').eq('audience', 'all').order('id', { ascending: false }).limit(50);
   if (error) { list.innerHTML = `<div class="empty-state">${esc(error.message)}</div>`; return; }
   const live = new Set((await getShows(currentArtistId)).map(s => s.id));
   const seen = new Set();
@@ -2812,6 +2941,15 @@ async function restoreDeletedShow(i) {
   if (!confirm(`Bring back "${r.name || 'Untitled show'}"?`)) return;
   try {
     must(await sb.from('shows').insert({ id: r.show_id, artist_id: currentArtistId, name: r.name || 'Restored show', show_date: r.show_date, state: r.state || {} }), 'Restore show');
+    // bring back its artist-only / crew-only parts too
+    const { data: parts } = await sb.from('show_history').select('id, audience, state')
+      .eq('show_id', r.show_id).eq('action', 'delete').in('audience', ['artist', 'crew']).order('id', { ascending: false });
+    const done = new Set();
+    for (const pr of parts || []) {
+      if (done.has(pr.audience)) continue;
+      done.add(pr.audience);
+      must(await sb.from('show_private').upsert({ show_id: r.show_id, audience: pr.audience, state: pr.state || {} }, { onConflict: 'show_id,audience' }), 'Restore private part');
+    }
   } catch (e) { alert(e.message); return; }
   _showsCache[currentArtistId] = null;
   closeHistory();
@@ -2929,6 +3067,9 @@ async function launch() {
 // APP BUILD
 // ════════════════════════════════
 function buildApp() {
+  if (myRoles[currentArtistId] !== 'tm' && viewAs !== 'tm') { viewAs = 'tm'; document.body.classList.remove('previewing'); }
+  ['c-aud', 'fl-aud', 'note-aud'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = audOptions('all'); });
+  const va = document.getElementById('view-as'); if (va) va.value = viewAs;
   document.getElementById('tb-title').textContent = state.name;
   document.getElementById('tb-artist').textContent = (currentArtist && currentArtist.name) || state.artist || '';
   document.getElementById('s-days-display').textContent = state.days.length;
@@ -2948,6 +3089,34 @@ function buildApp() {
   switchTab('itinerary');
   renderRail();
   renderSidebar();
+}
+
+// ════════════════════════════════
+// AUDIENCE — Everyone / Artist only / Crew only
+// ════════════════════════════════
+let viewAs = 'tm';                      // TM preview: 'tm' (everything) | 'artist' | 'crew'
+function shown(it) {
+  const a = (it && it.aud) || 'all';
+  return viewAs === 'tm' || a === 'all' || a === viewAs;
+}
+function audChip(it) {
+  if (it.aud === 'artist') return '<span class="aud-chip aud-artist">ARTIST ONLY</span>';
+  if (it.aud === 'crew') return '<span class="aud-chip aud-crew">CREW ONLY</span>';
+  return '';
+}
+// Which audiences the signed-in person can post to on this artist.
+function audOptions(selected) {
+  const role = myRoles[currentArtistId];
+  const opts = role === 'tm' ? ['all', 'artist', 'crew'] : ['all', role];
+  const label = { all: 'Everyone', artist: 'Artist only', crew: 'Crew only' };
+  return opts.map(a => `<option value="${a}"${a === (selected || 'all') ? ' selected' : ''}>${label[a]}</option>`).join('');
+}
+function setViewAs(v) {
+  viewAs = ['tm', 'artist', 'crew'].includes(v) ? v : 'tm';
+  document.body.classList.toggle('previewing', viewAs !== 'tm');
+  const b = document.getElementById('preview-banner');
+  if (b) b.textContent = viewAs === 'tm' ? '' : `Previewing what ${viewAs === 'artist' ? 'the artist' : 'crew'} can see. Nothing is hidden from you.`;
+  applyRemoteState(state);            // rebuild, keeping tab + day
 }
 
 // ════════════════════════════════
@@ -2978,9 +3147,10 @@ function buildDayPanel(d, idx, isShow) {
   const items = sortSchedule(state.schedules[key] || []);
   state.schedules[key] = items;
   const label = fmtDate(d) + (isShow ? ' — Show day' : '');
-  let rows = items.length === 0
+  const vis = items.filter(shown);
+  let rows = vis.length === 0
     ? '<div class="empty-state">No items yet. Add one below.</div>'
-    : items.map(s => schedRowHTML(s, key)).join('');
+    : vis.map(s => schedRowHTML(s, key)).join('');
 
   const badgeOpts = badgeOptions('');
 
@@ -2994,6 +3164,7 @@ function buildDayPanel(d, idx, isShow) {
       <input id="se-${idx}" type="text" placeholder="Item / event">
       <input id="ss-${idx}" type="text" placeholder="Note (optional)" style="max-width:180px">
       <select id="sb-${idx}" style="max-width:100px">${badgeOpts}</select>
+      <select id="sa-${idx}" aria-label="Who sees this" style="max-width:130px">${audOptions('all')}</select>
       <button class="btn-add" onclick="addSchedItem('${key}',${idx})">Add</button>
     </div>`;
 }
@@ -3031,13 +3202,14 @@ function addSchedItem(key, idx) {
   const e = document.getElementById('se-'+idx).value.trim();
   const s = document.getElementById('ss-'+idx).value.trim();
   const b = document.getElementById('sb-'+idx).value;
+  const a = pick(document.getElementById('sa-'+idx)?.value, AUDS, 'all');
   if (!e) return;
-  const item = { id: uid(), time: t||'—', title: e, sub: s, badge: b };
+  const item = { id: uid(), time: t||'—', title: e, sub: s, badge: b, aud: a };
   if (!state.schedules[key]) state.schedules[key] = [];
   state.schedules[key].push(item);
   state.schedules[key] = sortSchedule(state.schedules[key]);
   const container = document.getElementById('sched-'+key.replace(/ /g,'-'));
-  container.innerHTML = state.schedules[key].map(s => schedRowHTML(s, key)).join('');
+  container.innerHTML = state.schedules[key].filter(shown).map(s => schedRowHTML(s, key)).join('');
   document.getElementById('st-'+idx).value='';
   document.getElementById('se-'+idx).value='';
   document.getElementById('ss-'+idx).value='';
@@ -3048,7 +3220,7 @@ function schedRowHTML(s, key) {
   return `<div class="sched-row" id="sr-${s.id}">
     <span class="sched-time">${esc(s.time)||'—'}</span>
     <div class="sched-body">
-      <div class="sched-title">${esc(s.title)} <span class="badge ${s.badge}">${s.badge.replace('b-','')}</span></div>
+      <div class="sched-title">${esc(s.title)} <span class="badge ${s.badge}">${s.badge.replace('b-','')}</span>${audChip(s)}</div>
       ${s.sub ? `<div class="sched-sub">${esc(s.sub)}</div>` : ''}
     </div>
     <button class="sched-edit-btn" onclick="editSchedItem('${key}','${s.id}')" title="Edit">✏</button>
@@ -3069,6 +3241,7 @@ function editSchedItem(key, id) {
       <input class="f-title" id="ei-e-${id}" type="text" value="${esc(item.title)}" placeholder="Event">
       <input class="f-note"  id="ei-n-${id}" type="text" value="${esc(item.sub)}" placeholder="Note">
       <select class="f-badge" id="ei-b-${id}">${badgeOpts}</select>
+      <select id="ei-a-${id}" aria-label="Who sees this">${audOptions(item.aud)}</select>
       <button class="sched-save-btn"   onclick="saveSchedEdit('${key}','${id}')">Save</button>
       <button class="sched-cancel-btn" onclick="cancelSchedEdit('${key}','${id}')">Cancel</button>
     </div>`;
@@ -3088,9 +3261,10 @@ function saveSchedEdit(key, id) {
   item.title = e;
   item.sub   = n;
   item.badge = b;
+  item.aud   = pick(document.getElementById('ei-a-' + id)?.value, AUDS, item.aud || 'all');
   state.schedules[key] = sortSchedule(items);
   const container = document.getElementById('sched-' + key.replace(/ /g, '-'));
-  if (container) container.innerHTML = state.schedules[key].map(s => schedRowHTML(s, key)).join('');
+  if (container) container.innerHTML = state.schedules[key].filter(shown).map(s => schedRowHTML(s, key)).join('');
   saveState();
 }
 
@@ -3469,7 +3643,7 @@ function saveLodgingEdit(id) {
 function buildContacts() {
   const grid = document.getElementById('contact-grid');
   grid.innerHTML = '';
-  state.contacts.forEach(c => grid.appendChild(contactCard(c)));
+  state.contacts.filter(shown).forEach(c => grid.appendChild(contactCard(c)));
   const search = document.getElementById('contact-search');
   if (search && search.value) filterContacts(search.value);
   buildCrew();
@@ -3500,7 +3674,7 @@ function contactCard(c) {
   }
   div.innerHTML=`<div class="contact-top">
     <div class="avatar av${(c.color||0)%5}">${esc(initials)}</div>
-    <div style="flex:1;min-width:0"><div class="contact-name">${esc(c.name)}</div><div class="contact-role">${esc(c.role)}</div></div>
+    <div style="flex:1;min-width:0"><div class="contact-name">${esc(c.name)}</div><div class="contact-role">${esc(c.role)}</div>${audChip(c)}</div>
     <button class="sched-edit-btn" onclick="editContact('${c.id}')" title="Edit">✏</button>
     <button class="contact-del" onclick="deleteContact('${c.id}')">×</button>
   </div><div class="contact-detail" id="cd-${c.id}">${detail}</div>`;
@@ -3510,8 +3684,9 @@ function addContact() {
   const n=document.getElementById('c-name').value.trim();
   const r=document.getElementById('c-role').value.trim();
   const p=document.getElementById('c-phone').value.trim();
+  const a=pick(document.getElementById('c-aud')?.value, AUDS, 'all');
   if (!n) return;
-  const c={id:uid(),name:n,role:r,phone:p,color:state.contacts.length};
+  const c={id:uid(),name:n,role:r,phone:p,color:state.contacts.length,aud:a};
   state.contacts.push(c);
   document.getElementById('contact-grid').appendChild(contactCard(c));
   document.getElementById('c-name').value='';
@@ -3534,6 +3709,7 @@ function editContact(id) {
     <input id="ce-n-${id}" type="text" value="${esc(c.name)}" placeholder="Name" style="width:100%">
     <input id="ce-r-${id}" type="text" value="${esc(c.role)}" placeholder="Role" style="width:100%">
     <input id="ce-p-${id}" type="text" value="${esc(c.phone)}" placeholder="Phone / email" style="width:100%">
+    <select id="ce-a-${id}" aria-label="Who sees this" style="width:100%">${audOptions(c.aud)}</select>
     <div style="display:flex;gap:6px">
       <button class="sched-save-btn"   onclick="saveContactEdit('${id}')">Save</button>
       <button class="sched-cancel-btn" onclick="cancelContactEdit('${id}')">Cancel</button>
@@ -3547,6 +3723,7 @@ function saveContactEdit(id) {
   c.name  = document.getElementById('ce-n-' + id)?.value.trim() || c.name;
   c.role  = document.getElementById('ce-r-' + id)?.value.trim();
   c.phone = document.getElementById('ce-p-' + id)?.value.trim();
+  c.aud   = pick(document.getElementById('ce-a-' + id)?.value, AUDS, c.aud || 'all');
   buildContacts(); updateStats(); saveState();
 }
 function cancelContactEdit(id) {
@@ -3834,9 +4011,10 @@ function toggleReaction(noteId, emoji) {
 function saveNote() {
   const txt=document.getElementById('note-input').value.trim();
   const day=document.getElementById('note-day-sel').value;
+  const aud=pick(document.getElementById('note-aud')?.value, AUDS, 'all');
   if(!txt) return;
   const n={
-    id:uid(), txt, day,
+    id:uid(), txt, day, aud, ts: Date.now(),
     time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
     author: myDisplayName(), authorId: myUid, authorEmail: myEmail,
     reactions: {}, replies: []
@@ -3867,9 +4045,9 @@ function replyHTML(parentId, r) {
 function renderNotes() {
   const list=document.getElementById('notes-list');
   const filter=document.getElementById('note-filter-sel')?.value || 'All days';
-  const notes = filter==='All days'
+  const notes = (filter==='All days'
     ? state.notes
-    : state.notes.filter(n => n.day===filter || n.day==='All days');
+    : state.notes.filter(n => n.day===filter || n.day==='All days')).filter(shown);
   if(!state.notes.length){ list.innerHTML='<div class="empty-state">No notes yet.</div>'; return; }
   if(!notes.length){ list.innerHTML=`<div class="empty-state">No notes for ${esc(filter)}.</div>`; return; }
   try { renderRail(); } catch (e) {}
@@ -3877,7 +4055,7 @@ function renderNotes() {
     const replies = (n.replies || []).map(r => replyHTML(n.id, r)).join('');
     return `
     <div class="note-entry" id="ne-${n.id}">
-      <div class="note-meta"><span>${esc(n.day)} · ${esc(n.time)}</span>${noteAuthorChip(n)}</div>
+      <div class="note-meta"><span>${esc(n.day)} · ${esc(n.time)}</span>${noteAuthorChip(n)}${audChip(n)}</div>
       <div class="note-body">${esc(n.txt)}</div>
       ${noteReactionsHTML(n)}
       <div class="note-reply-action"><button class="note-reply-btn" onclick="startReply('${n.id}')">↳ Reply</button></div>
@@ -4201,7 +4379,7 @@ function flightCardHTML(f) {
   return `<div class="flight-card" id="flc-${f.id}">
     <div class="flight-top">
       <span class="flight-pax">${esc(f.pax) || '—'}</span>
-      <span class="flight-airline">${esc(f.airline)}</span>
+      <span class="flight-airline">${esc(f.airline)}${audChip(f)}</span>
       <div class="flight-actions">
         <button class="flight-edit-btn" onclick="editFlight('${f.id}')" title="Edit">✏</button>
         <button class="flight-del-btn" onclick="deleteFlight('${f.id}')">×</button>
@@ -4233,12 +4411,13 @@ function renderFlights() {
   if (!state.flights) state.flights = [];
   const list = document.getElementById('flights-list');
   if (!list) return;
-  if (!state.flights.length) {
+  const vis = state.flights.filter(shown);
+  if (!vis.length) {
     list.innerHTML = '<div class="empty-state">No flights yet.</div>';
     return;
   }
   const groups = {};
-  state.flights.forEach(f => {
+  vis.forEach(f => {
     const key = f.date || '';
     (groups[key] = groups[key] || []).push(f);
   });
@@ -4265,6 +4444,7 @@ function addFlight() {
     arrive:  document.getElementById('fl-arrive').value.trim(),
     conf:    document.getElementById('fl-conf').value.trim(),
     note:    document.getElementById('fl-note').value.trim(),
+    aud:     pick(document.getElementById('fl-aud')?.value, AUDS, 'all'),
   };
   if (!f.pax && !f.airline && !f.from && !f.to) return;
   if (!state.flights) state.flights = [];
@@ -4299,6 +4479,7 @@ function editFlight(id) {
       <input id="fe-arrive-${id}"  value="${esc(f.arrive)}"  placeholder="Arrives">
       <input id="fe-conf-${id}"    value="${esc(f.conf)}"    placeholder="Confirmation #" class="loc-span2">
       <input id="fe-note-${id}"    value="${esc(f.note)}"    placeholder="Note" class="loc-span2">
+      <select id="fe-aud-${id}" class="loc-span2" aria-label="Who sees this">${audOptions(f.aud)}</select>
     </div>
     <div class="add-row" style="margin-top:8px">
       <button class="sched-save-btn"   onclick="saveFlightEdit('${id}')">Save</button>
@@ -4319,6 +4500,7 @@ function saveFlightEdit(id) {
   f.arrive  = document.getElementById('fe-arrive-' + id)?.value.trim();
   f.conf    = document.getElementById('fe-conf-' + id)?.value.trim();
   f.note    = document.getElementById('fe-note-' + id)?.value.trim();
+  f.aud     = pick(document.getElementById('fe-aud-' + id)?.value, AUDS, f.aud || 'all');
   renderFlights(); saveState();
 }
 
@@ -4366,6 +4548,11 @@ function openExportModal()  { document.getElementById('export-modal').style.disp
 function closeExportModal() { document.getElementById('export-modal').style.display='none'; }
 
 function generatePDF() {
+  const prevView = viewAs;
+  if (myRoles[currentArtistId] === 'tm') viewAs = document.getElementById('ex-aud')?.value || 'tm';
+  try { buildPDF(); } finally { viewAs = prevView; }
+}
+function buildPDF() {
   const incItinerary  = document.getElementById('ex-itinerary').checked;
   const incRos        = document.getElementById('ex-ros').checked;
   const incLocations  = document.getElementById('ex-locations').checked;
@@ -4433,13 +4620,14 @@ function generatePDF() {
 </style></head><body>`;
 
   const showStr = state.showDate ? ` · Show ${fmtDateSimple(state.showDate)}` : '';
-  html += `<h1>${esc(state.name)}</h1><div class="meta">${esc(state.artist)}${showStr} · TM: ${esc(state.tmName)} · ${state.days.length}-day run</div>`;
+  const verTag = viewAs === 'artist' ? ' · Artist itinerary' : viewAs === 'crew' ? ' · Crew itinerary' : '';
+  html += `<h1>${esc(state.name)}</h1><div class="meta">${esc(state.artist)}${showStr} · TM: ${esc(state.tmName)} · ${state.days.length}-day run${verTag}</div>`;
 
   if (incItinerary && state.days.length) {
     html += `<h2>Daily Itinerary</h2>`;
     state.days.forEach(d => {
       const key   = d.toDateString();
-      const items = state.schedules[key] || [];
+      const items = (state.schedules[key] || []).filter(shown);
       const isShow = state.showDate && sameDay(d, state.showDate);
       const dayTitle = `${fmtDate(d)}${isShow?' — Show Day':''}`;
       html += `<table class="day-table"><thead><tr><th colspan="2"><div class="day-head">${esc(dayTitle)}</div></th></tr></thead><tbody>`;
@@ -4463,10 +4651,10 @@ function generatePDF() {
     });
   }
 
-  if (incFlights && state.flights && state.flights.length) {
+  if (incFlights && state.flights && state.flights.filter(shown).length) {
     html += `<h2>Flights</h2>`;
     const fgroups = {};
-    state.flights.forEach(f => { const k = f.date || ''; (fgroups[k] = fgroups[k] || []).push(f); });
+    state.flights.filter(shown).forEach(f => { const k = f.date || ''; (fgroups[k] = fgroups[k] || []).push(f); });
     const fkeys = Object.keys(fgroups).sort((a,b) => a===''?1:b===''?-1:(a<b?-1:a>b?1:0));
     fkeys.forEach(key => {
       html += `<table class="day-table"><thead><tr><th colspan="2"><div class="day-head">${esc(flightDayHeaderLabel(key))}</div></th></tr></thead><tbody>`;
@@ -4514,12 +4702,13 @@ function generatePDF() {
     }
   }
 
-  if (incContacts && state.contacts.length) {
+  const pdfContacts = state.contacts.filter(shown);
+  if (incContacts && pdfContacts.length) {
     html += `<h2 class="page-break">Contacts</h2>`;
     html += `<table class="day-table"><tbody>`;
-    for (let i = 0; i < state.contacts.length; i += 2) {
+    for (let i = 0; i < pdfContacts.length; i += 2) {
       const cardHTML = c => c ? `<div class="contact-card"><div class="contact-role">${esc(c.role)}</div><div class="contact-name">${esc(c.name)}</div>${c.phone?`<div class="contact-phone">${esc(c.phone)}</div>`:''}</div>` : '';
-      const a = state.contacts[i], b = state.contacts[i+1];
+      const a = pdfContacts[i], b = pdfContacts[i+1];
       html += `<tr class="contact-tr"><td style="width:50%;padding:5px 5px 5px 0;vertical-align:top">${cardHTML(a)}</td><td style="width:50%;padding:5px 0 5px 5px;vertical-align:top">${cardHTML(b)}</td></tr>`;
     }
     html += `</tbody></table>`;
@@ -4532,9 +4721,9 @@ function generatePDF() {
     });
   }
 
-  if (incNotes && state.notes.length) {
+  if (incNotes && state.notes.filter(shown).length) {
     html += `<h2>Notes</h2>`;
-    state.notes.forEach(n => {
+    state.notes.filter(shown).forEach(n => {
       html += `<div class="note-block"><div class="note-meta"><span>${esc(n.day)} · ${esc(n.time)}</span>${noteAuthorChip(n)}</div><div class="note-text">${esc(n.txt)}</div>`;
       const replies = n.replies || [];
       if (replies.length) {
@@ -4599,7 +4788,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
