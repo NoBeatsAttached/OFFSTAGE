@@ -14,19 +14,22 @@
 <title>// OFFSTAGE</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0a; --surface: #111111; --surface2: #1a1a1a; --surface3: #222222;
-    --border: #2a2a2a; --border2: #333333; --text: #f0f0f0; --muted: #888888; --dim: #555555;
-    --accent: #b48aff; --accent-dim: rgba(180,138,255,0.14); --accent-text: #0a0a0a;
+    --bg: #0e0d0c; --surface: #1a1816; --surface2: #1f1c1a; --surface3: #2b2825;
+    --border: #2b2825; --border2: #3a3632; --text: #f2eee8; --muted: #a8a29b; --dim: #8a847d;
+    --accent: #6b3fa6;                       /* OFFSTAGE brand purple — fills, wordmark, borders */
+    --accent-ink: #ae95ce;                   /* same purple, lightened — for small text on black */
+    --accent-dim: rgba(107,63,166,0.24); --accent-text: #ffffff;   /* accent-text = text ON purple */
+    --rail: #141210;
     --blue: #4a9eff; --blue-dim: rgba(74,158,255,0.12);
     --amber: #ffb347; --amber-dim: rgba(255,179,71,0.12);
     --purple: #d98aff; --purple-dim: rgba(217,138,255,0.12);
     --teal: #3dd9ac; --teal-dim: rgba(61,217,172,0.12);
     --red: #ff6b6b; --red-dim: rgba(255,107,107,0.12);
     --radius: 8px; --radius-lg: 12px;
-    --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+    --font: 'IBM Plex Sans', sans-serif; --mono: 'DM Mono', monospace; --display: 'Big Shoulders Display', 'IBM Plex Sans', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
@@ -51,15 +54,15 @@
   .danger-zone span { font-size: 12px; color: var(--dim); }
   .readonly .danger-zone { display: none !important; }
   .not-owner .owner-only { display: none !important; }
-  .topbar-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; white-space: nowrap; }
+  .topbar-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--accent-ink); text-transform: uppercase; white-space: nowrap; }
   .topbar-back { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; padding: 4px 6px; white-space: nowrap; transition: color .15s; }
-  .topbar-back:hover { color: var(--accent); }
+  .topbar-back:hover { color: var(--accent-ink); }
   .topbar-title { font-size: 13px; font-weight: 500; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .topbar-action {
     font-size: 11px; cursor: pointer; font-family: var(--font); padding: 5px 10px;
     border-radius: var(--radius); font-weight: 500; white-space: nowrap; transition: all .15s;
   }
-  .btn-export { color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent); }
+  .btn-export { color: var(--accent-ink); background: var(--accent-dim); border: 1px solid var(--accent); }
   .btn-export:hover { background: var(--accent); color: var(--accent-text); }
   .btn-delete { color: var(--red); background: var(--red-dim); border: 1px solid transparent; }
   .btn-delete:hover { border-color: var(--red); }
@@ -83,7 +86,7 @@
     display: flex; align-items: center; justify-content: center;
     font-family: var(--mono); font-size: 15px; font-weight: 500; flex-shrink: 0;
   }
-  .av0 { background: var(--accent-dim); color: var(--accent); }
+  .av0 { background: var(--accent-dim); color: var(--accent-ink); }
   .av1 { background: var(--blue-dim); color: var(--blue); }
   .av2 { background: var(--purple-dim); color: var(--purple); }
   .av3 { background: var(--teal-dim); color: var(--teal); }
@@ -91,7 +94,7 @@
   .artist-card-body { flex: 1; min-width: 0; }
   .artist-card-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
   .artist-card-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-  .artist-card-shows { font-size: 11px; color: var(--accent); font-family: var(--mono); margin-top: 3px; }
+  .artist-card-shows { font-size: 11px; color: var(--accent-ink); font-family: var(--mono); margin-top: 3px; }
   .artist-card-del { background: none; border: none; color: var(--dim); font-size: 18px; cursor: pointer; padding: 6px; flex-shrink: 0; border-radius: 6px; transition: all .15s; }
   .artist-card-del:hover { color: var(--red); background: var(--red-dim); }
   .btn-new {
@@ -100,7 +103,7 @@
     color: var(--muted); font-family: var(--font); font-size: 14px;
     font-weight: 500; cursor: pointer; transition: all .15s;
   }
-  .btn-new:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-new:hover { border-color: var(--accent); color: var(--accent-ink); }
 
   /* ── BOOT + LOGIN SCREENS ── */
   #boot-screen { display: flex; min-height: 100vh; align-items: center; justify-content: center; }
@@ -110,7 +113,7 @@
     flex-direction: column;
   }
   .login-box { width: 100%; max-width: 360px; }
-  .login-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .15em; color: var(--accent); text-transform: uppercase; margin-bottom: 2rem; }
+  .login-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .15em; color: var(--accent-ink); text-transform: uppercase; margin-bottom: 2rem; }
   .login-title { font-size: 24px; font-weight: 600; margin-bottom: 6px; }
   .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
   .login-error { font-size: 12px; color: var(--red); margin-top: 10px; min-height: 18px; }
@@ -132,7 +135,7 @@
   .team-name { font-size: 13px; font-weight: 600; }
   .team-email { font-size: 11px; color: var(--dim); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role-chip { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
-  .role-tm     { background: var(--accent-dim); color: var(--accent); }
+  .role-tm     { background: var(--accent-dim); color: var(--accent-ink); }
   .role-artist { background: var(--teal-dim);   color: var(--teal); }
   .role-crew   { background: var(--blue-dim);   color: var(--blue); }
   .invite-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
@@ -141,7 +144,7 @@
   .invite-new { display: none; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-dim); font-family: var(--mono); font-size: 11px; word-break: break-all; color: var(--text); line-height: 1.5; }
 
   /* Live-update banner (someone else changed the show while you were editing) */
-  .remote-banner { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 500; background: var(--accent); color: #0a0a0a; border: none; border-radius: 20px; padding: 10px 18px; font-family: var(--mono); font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,.5); display: none; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+  .remote-banner { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 500; background: var(--accent); color: var(--accent-text); border: none; border-radius: 20px; padding: 10px 18px; font-family: var(--mono); font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,.5); display: none; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
 
   /* ── LOCATIONS ── */
   .loc-section { margin-bottom: 1rem; }
@@ -156,9 +159,9 @@
   .loc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; position: relative; }
   .loc-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
   .loc-card-name { font-size: 15px; font-weight: 600; }
-  .venue-day-header { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .venue-day-header { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
   .venue-day-header:first-child { margin-top: 0; }
-  .rider-banner { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); background: rgba(180,138,255,0.10); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; margin-bottom: 1rem; }
+  .rider-banner { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); background: rgba(107,63,166,0.16); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; margin-bottom: 1rem; }
   .rider-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .rider-item:last-child { border-bottom: none; }
   .rider-item .ri-text { flex: 1; font-size: 14px; }
@@ -171,7 +174,7 @@
   .loc-field-val { font-size: 13px; color: var(--text); }
 
   /* Tappable link styling */
-  a.link-action { color: var(--accent); text-decoration: none; border-bottom: 1px dashed rgba(180,138,255,0.4); padding-bottom: 1px; }
+  a.link-action { color: var(--accent-ink); text-decoration: none; border-bottom: 1px dashed rgba(174,149,206,0.45); padding-bottom: 1px; }
   a.link-action:hover { border-bottom-style: solid; }
   a.link-action:active { opacity: 0.6; }
   .contact-sms { display: inline-block; margin-left: 6px; text-decoration: none; font-size: 13px; opacity: 0.7; }
@@ -185,14 +188,14 @@
   .export-bar-label { font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: 0.04em; }
   .export-bar-inline { display: inline-flex; gap: 6px; }
   .export-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 10px; font-family: var(--mono); font-size: 11px; color: var(--text); cursor: pointer; letter-spacing: 0.04em; }
-  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
   .export-btn:active { opacity: 0.6; }
-  .export-btn.ok { border-color: var(--accent); color: var(--accent); }
+  .export-btn.ok { border-color: var(--accent); color: var(--accent-ink); }
   .gl-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
   .gl-stat span { font-size: 16px; font-weight: 500; display: block; }
   .gl-stat .gl-ga  { color: var(--blue); }
   .gl-stat .gl-aa  { color: var(--amber); }
-  .gl-stat .gl-vip { color: var(--accent); }
+  .gl-stat .gl-vip { color: var(--accent-ink); }
   .gl-stat .gl-tot { color: var(--text); }
   .gl-table { width: 100%; border-collapse: collapse; }
   .gl-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border2); }
@@ -202,7 +205,7 @@
   .gl-tier { font-family: var(--mono); font-size: 10px; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; font-weight: 500; }
   .tier-ga  { background: var(--blue-dim);   color: var(--blue); }
   .tier-aa  { background: var(--amber-dim);  color: var(--amber); }
-  .tier-vip { background: var(--accent-dim); color: var(--accent); }
+  .tier-vip { background: var(--accent-dim); color: var(--accent-ink); }
   .gl-status { font-size: 11px; font-family: var(--mono); }
   .st-confirmed { color: var(--teal); }
   .st-pending   { color: var(--amber); }
@@ -210,7 +213,7 @@
   .gl-note-cell { font-size: 11px; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gl-actions { display: flex; gap: 4px; white-space: nowrap; }
   .gl-edit-btn { background: none; border: none; color: var(--dim); font-size: 12px; cursor: pointer; padding: 3px 5px; border-radius: 4px; font-family: var(--mono); transition: color .15s; }
-  .gl-edit-btn:hover { color: var(--accent); }
+  .gl-edit-btn:hover { color: var(--accent-ink); }
   .gl-del-btn  { background: none; border: none; color: var(--dim); font-size: 14px; cursor: pointer; padding: 3px 5px; border-radius: 4px; transition: color .15s; }
   .gl-del-btn:hover { color: var(--red); }
   .readonly .gl-del-btn  { display: none !important; }
@@ -226,19 +229,19 @@
   .flight-day-hdr::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .flight-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; position: relative; }
   .flight-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-  .flight-pax { font-size: 13px; font-weight: 600; color: var(--accent); font-family: var(--mono); }
+  .flight-pax { font-size: 13px; font-weight: 600; color: var(--accent-ink); font-family: var(--mono); }
   .flight-airline { font-size: 13px; font-weight: 600; }
   .flight-route { display: flex; align-items: center; gap: 14px; margin: 8px 0; }
   .flight-end { text-align: center; }
   .flight-airport { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: .05em; }
   .flight-time { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
   .flight-arrow { flex: 1; height: 1px; background: var(--border2); position: relative; min-width: 30px; }
-  .flight-arrow::after { content: '✈'; position: absolute; right: -2px; top: -9px; color: var(--accent); font-size: 13px; }
+  .flight-arrow::after { content: '✈'; position: absolute; right: -2px; top: -9px; color: var(--accent-ink); font-size: 13px; }
   .flight-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; }
-  .flight-conf { color: var(--accent); }
+  .flight-conf { color: var(--accent-ink); }
   .flight-actions { display: flex; gap: 4px; flex-shrink: 0; }
   .flight-edit-btn { background: none; border: none; color: var(--dim); font-size: 12px; cursor: pointer; padding: 3px 5px; border-radius: 4px; font-family: var(--mono); transition: color .15s; }
-  .flight-edit-btn:hover { color: var(--accent); }
+  .flight-edit-btn:hover { color: var(--accent-ink); }
   .flight-del-btn { background: none; border: none; color: var(--dim); font-size: 16px; cursor: pointer; padding: 0 4px; transition: color .15s; }
   .flight-del-btn:hover { color: var(--red); }
 
@@ -296,21 +299,21 @@
   .today-empty { padding: 3rem 1rem; text-align: center; color: var(--dim); font-size: 13px; line-height: 1.6; }
   .today-empty .big { font-size: 16px; color: var(--text); margin-bottom: 0.5rem; }
   .today-context { padding: 1.25rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.75rem; background: var(--surface); }
-  .today-context .date { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+  .today-context .date { font-family: var(--mono); font-size: 11px; color: var(--accent-ink); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
   .today-context .show-name { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
   .today-context .artist-name { font-size: 12px; color: var(--dim); }
-  .today-context .show-day-flag { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; background: var(--accent); color: #0a0a0a; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .today-context .show-day-flag { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; background: var(--accent); color: var(--accent-text); font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
   .today-section { margin-bottom: 2rem; }
   .today-section-h { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; padding: 0 4px; }
   .today-section .card { padding: 4px 0; }
   .today-empty-section { padding: 16px 1rem; font-size: 12px; color: var(--dim); text-align: center; }
   .today-next { padding: 16px 18px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: var(--radius); }
-  .today-next .label { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .today-next .label { font-family: var(--mono); font-size: 10px; color: var(--accent-ink); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
   .today-next .time { font-family: var(--mono); font-size: 20px; color: var(--text); font-weight: 600; }
   .today-next .title { font-size: 15px; color: var(--text); margin-top: 4px; }
   .today-next .countdown { font-size: 11px; color: var(--dim); margin-top: 6px; }
-  .today-open-btn { display: block; width: 100%; padding: 13px; margin-top: 1.5rem; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-  .today-open-btn:hover { background: var(--accent); color: #0a0a0a; }
+  .today-open-btn { display: block; width: 100%; padding: 13px; margin-top: 1.5rem; background: transparent; color: var(--accent-ink); border: 1px solid var(--accent); border-radius: var(--radius); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+  .today-open-btn:hover { background: var(--accent); color: var(--accent-text); }
   .today-wrap .sched-row { padding: 13px 14px; gap: 14px; align-items: flex-start; border-bottom: 1px solid var(--border); }
   .today-wrap .sched-row:last-child { border-bottom: none; }
   .today-wrap .sched-time { padding-top: 1px; }
@@ -322,7 +325,7 @@
   .today-wrap .ros-title { line-height: 1.45; }
   .today-wrap .ros-note { margin-top: 4px; }
 
-  .topbar-today { font-size: 11px; padding: 5px 10px; background: var(--accent); color: #0a0a0a; border: none; border-radius: var(--radius); font-family: var(--mono); letter-spacing: 0.04em; cursor: pointer; font-weight: 600; }
+  .topbar-today { font-size: 11px; padding: 5px 10px; background: var(--accent); color: var(--accent-text); border: none; border-radius: var(--radius); font-family: var(--mono); letter-spacing: 0.04em; cursor: pointer; font-weight: 600; }
   .topbar-today:hover { opacity: 0.85; }
   .show-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
   .show-card {
@@ -339,7 +342,7 @@
   .show-card-del { background: none; border: none; color: var(--dim); font-size: 18px; cursor: pointer; padding: 6px; flex-shrink: 0; border-radius: 6px; transition: all .15s; }
   .show-card-del:hover { color: var(--red); background: var(--red-dim); }
   .show-card-edit { background: none; border: none; color: var(--dim); font-size: 14px; cursor: pointer; padding: 6px; flex-shrink: 0; border-radius: 6px; transition: all .15s; font-family: var(--mono); }
-  .show-card-edit:hover { color: var(--accent); background: var(--accent-dim); }
+  .show-card-edit:hover { color: var(--accent-ink); background: var(--accent-dim); }
   .show-edit-form {
     display: none; background: var(--surface2); border: 1px solid var(--accent);
     border-radius: var(--radius-lg); padding: 1.25rem; margin-top: 10px;
@@ -385,7 +388,7 @@
   #app { display: none; }
   .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
   .stat { background: var(--surface); padding: 14px 16px; text-align: center; }
-  .stat-num { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent); }
+  .stat-num { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent-ink); }
   .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 3px; }
 
   .tabs-bar { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
@@ -401,7 +404,7 @@
   .day-tabs { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
   .dtab { padding: 5px 12px; font-size: 12px; font-family: var(--mono); cursor: pointer; border: 1px solid var(--border2); border-radius: 4px; background: none; color: var(--muted); transition: all .15s; }
   .dtab:hover { color: var(--text); border-color: var(--dim); }
-  .dtab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+  .dtab.active { background: var(--accent-dim); color: var(--accent-ink); border-color: var(--accent); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
   .card-header { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 12px; }
@@ -415,7 +418,7 @@
   .sched-del { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 0 4px; }
   .sched-del:hover { color: var(--red); }
   .sched-edit-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0 4px; font-family: var(--mono); transition: color .15s; }
-  .sched-edit-btn:hover { color: var(--accent); }
+  .sched-edit-btn:hover { color: var(--accent-ink); }
   .sched-row { cursor: default; }
   .sched-row-editing { background: var(--surface2); border-radius: var(--radius); padding: 10px 12px !important; margin: 4px 0; }
   .sched-inline-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; }
@@ -432,7 +435,7 @@
   .sched-cancel-btn { background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 6px; padding: 5px 10px; font-family: var(--font); font-size: 12px; cursor: pointer; }
 
   .badge { display: inline-block; font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 2px 6px; border-radius: 3px; margin-left: 6px; }
-  .b-show { background: var(--accent-dim); color: var(--accent); }
+  .b-show { background: var(--accent-dim); color: var(--accent-ink); }
   .b-travel { background: var(--blue-dim); color: var(--blue); }
   .b-hotel { background: var(--purple-dim); color: var(--purple); }
   .b-prod { background: var(--amber-dim); color: var(--amber); }
@@ -485,13 +488,13 @@
   .note-reactions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .note-react { background: transparent; border: 1px solid var(--border); border-radius: 12px; padding: 3px 9px; font-size: 13px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; gap: 5px; line-height: 1.4; font-family: inherit; }
   .note-react:hover { border-color: var(--accent); }
-  .note-react.active { background: rgba(180, 138, 255, 0.18); border-color: var(--accent); }
+  .note-react.active { background: rgba(107,63,166,0.28); border-color: var(--accent); }
   .note-react .rc { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 600; }
-  .note-react.active .rc { color: var(--accent); }
+  .note-react.active .rc { color: var(--accent-ink); }
   .note-reactors { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px; line-height: 1.4; }
   .note-reply-action { margin-top: 6px; }
   .note-reply-btn { background: transparent; border: none; color: var(--dim); font-size: 11px; font-family: var(--mono); cursor: pointer; padding: 2px 0; letter-spacing: 0.04em; }
-  .note-reply-btn:hover { color: var(--accent); }
+  .note-reply-btn:hover { color: var(--accent-ink); }
   .note-reply-form { margin-top: 10px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(0,0,0,0.2); }
   .note-reply-form textarea { width: 100%; min-height: 38px; max-height: 240px; margin-bottom: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 8px; font-family: inherit; font-size: 13px; resize: none; overflow-y: auto; box-sizing: border-box; line-height: 1.4; }
   .note-replies { margin-top: 10px; padding-left: 14px; border-left: 2px solid var(--border); }
@@ -513,7 +516,7 @@
   .ros-del { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 0 4px; flex-shrink: 0; }
   .ros-del:hover { color: var(--red); }
   .ros-dash { color: var(--muted); font-size: 14px; align-self: center; flex-shrink: 0; }
-  .rt-headliner { background: var(--accent-dim); color: var(--accent); }
+  .rt-headliner { background: var(--accent-dim); color: var(--accent-ink); }
   .rt-opener    { background: var(--teal-dim); color: var(--teal); }
   .rt-changeover{ background: var(--amber-dim); color: var(--amber); }
   .rt-doors     { background: var(--blue-dim); color: var(--blue); }
@@ -549,20 +552,183 @@
     .topbar { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
     .home-wrap, .artist-wrap { padding-left: 1rem; padding-right: 1rem; }
   }
+
+  /* ════════════════════════════════════════════════════════════
+     ROAD CASE — OFFSTAGE visual system (2026.09.30)
+     Display: Big Shoulders · Body: IBM Plex Sans · Tags: DM Mono
+     Brand purple #6b3fa6 (--accent). Small purple text uses
+     --accent-ink so it stays readable on black.
+     RULE: nothing on any screen ever scrolls sideways.
+     ════════════════════════════════════════════════════════════ */
+  body { overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font-family: var(--font); }
+  :focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+  /* Wordmark + display type */
+  .topbar-logo { font-family: var(--display); font-weight: 900; font-size: 22px; letter-spacing: .02em; color: var(--accent); text-transform: none; }
+  .home-title, .setup-title, .login-title { font-family: var(--display); font-weight: 900; line-height: .95; letter-spacing: 0; }
+  .home-title { font-size: 48px; }
+  .setup-title { font-size: 44px; }
+  .artist-card-name, .show-card-name { font-family: var(--display); font-weight: 900; line-height: 1; }
+  .artist-card-name { font-size: 30px; margin-bottom: 4px; }
+  .show-card-name { font-size: 22px; margin-bottom: 4px; }
+  .stat-num { font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--text); }
+  .stat-lbl { font-family: var(--mono); letter-spacing: .12em; }
+
+  /* Boot + sign in */
+  .boot-mark { font-family: var(--display); font-weight: 900; font-size: 40px; color: var(--accent); letter-spacing: .02em; }
+  #login-screen { justify-content: flex-end; padding: 2rem 1.5rem calc(2.5rem + env(safe-area-inset-bottom)); position: relative; overflow: hidden; }
+  #login-screen::before { content: 'OFF'; position: absolute; top: -40px; right: -120px; font-family: var(--display); font-weight: 900; font-size: 280px; line-height: .8; color: #171514; letter-spacing: -4px; transform: rotate(-90deg); transform-origin: top right; pointer-events: none; }
+  .login-box { position: relative; max-width: 380px; }
+  .login-kicker { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .18em; color: var(--muted); margin-bottom: 2.5rem; }
+  .login-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .login-mark { font-family: var(--display); font-weight: 900; font-size: 88px; line-height: .86; letter-spacing: -1px; color: var(--accent); margin: 0 0 1.5rem; }
+  .login-title { font-size: 28px; margin-bottom: 6px; }
+  .login-sub { font-size: 16px; color: #bdb6ad; margin-bottom: 1.75rem; }
+
+  /* Top bar: fixed pieces only, extras live in the ⋯ menu */
+  .topbar { background: var(--bg); border-bottom: 1px solid var(--border); overflow: visible; gap: 8px; }
+  .topbar-title { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--surface); color: #d6d0c8; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
+  .icon-btn:hover { background: var(--surface3); }
+  .topbar-today { height: 36px; padding: 0 14px; border-radius: 18px; font-size: 12px; letter-spacing: .08em; font-weight: 500; text-transform: uppercase; }
+  .pill-btn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--border2); background: transparent; color: #d6d0c8; font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .pill-btn:hover { border-color: var(--accent-ink); color: var(--text); }
+  .menu-wrap { position: relative; flex-shrink: 0; }
+  .menu-pop { display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; max-width: calc(100vw - 32px); background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; padding: 6px; z-index: 300; box-shadow: 0 12px 32px rgba(0,0,0,.55); }
+  .menu-pop.open { display: block; }
+  .menu-pop button { display: block; width: 100%; text-align: left; min-height: 44px; padding: 0 12px; border: none; border-radius: 8px; background: transparent; color: var(--text); font-size: 15px; cursor: pointer; }
+  .menu-pop button:hover { background: var(--surface3); }
+  .menu-pop button.danger { color: var(--red); }
+
+  /* Cards */
+  .artist-card, .show-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .artist-card:hover, .show-card:hover { border-color: var(--accent); }
+  .artist-av { border-radius: 10px; font-family: var(--display); font-weight: 900; font-size: 18px; }
+  .artist-card-meta, .show-card-meta { font-family: var(--font); font-size: 13px; color: var(--muted); }
+  .artist-card-shows { font-family: var(--mono); font-size: 12px; color: var(--accent-ink); margin-top: 6px; }
+  .btn-new { border-radius: 14px; min-height: 56px; }
+  .btn-primary { border-radius: 10px; min-height: 48px; background: var(--accent); color: var(--accent-text); }
+  .role-chip { font-weight: 500; letter-spacing: .12em; }
+  .role-tm { background: var(--accent); color: var(--accent-text); }
+  .card { border-radius: 14px; }
+  .card-header { letter-spacing: .14em; color: var(--muted); }
+
+  /* Show header chips */
+  .stat-row { background: none; border: none; gap: 8px; padding: 12px 16px 4px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  @media (min-width: 600px) { .stat-row { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .stat { background: var(--surface); border-radius: 12px; padding: 12px 10px; text-align: left; }
+
+  .show-head { padding: 16px 20px 0; }
+  .show-title { margin: 0; font-family: var(--display); font-weight: 900; font-size: 44px; line-height: .95; }
+  @media (min-width: 900px) { .show-head { padding: 24px 32px 0; } .show-title { font-size: 56px; } }
+
+  /* Section nav: desktop = wrapping tabs, phone = bottom bar */
+  .tab { border-bottom-width: 2px; }
+  .tab.active { border-bottom-color: var(--accent); }
+  .bottom-nav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 200; background: var(--rail); border-top: 1px solid var(--border); padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); grid-template-columns: repeat(5, minmax(0,1fr)); }
+  .bn-btn { min-height: 52px; border: none; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; cursor: pointer; padding: 0; }
+  .bn-btn svg { width: 22px; height: 22px; }
+  .bn-btn.active { color: var(--accent-ink); font-weight: 600; }
+  .more-sheet { display: none; position: fixed; inset: 0; z-index: 400; }
+  .more-sheet.open { display: block; }
+  .more-sheet .sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+  .more-sheet .sheet-body { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface2); border-radius: 18px 18px 0 0; padding: 10px 12px calc(16px + env(safe-area-inset-bottom)); }
+  .sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--border2); margin: 4px auto 12px; }
+  .sheet-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 12px; border: none; border-radius: 10px; background: none; color: var(--text); font-size: 16px; cursor: pointer; text-align: left; }
+  .sheet-item:hover, .sheet-item.active { background: var(--surface3); }
+
+  @media (max-width: 899px) {
+    #app .tabs-bar { display: none; }
+    #app .bottom-nav { display: grid; }
+    #app .content { padding-bottom: 120px; }
+    .remote-banner { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  }
+  @media (min-width: 900px) {
+    .tabs-bar { flex-wrap: wrap; overflow: visible; padding: 0 20px; background: var(--bg); }
+    .content { max-width: none; margin: 0; padding: 1.5rem 2rem 3rem; }
+    .stat-row { padding: 16px 32px 4px; }
+    /* Itinerary: every day side by side, wrapping to a new row — never sideways */
+    #itinerary .day-tabs { display: none; }
+    #day-panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+    #day-panels > div { display: block !important; min-width: 0; }
+    .home-wrap, .artist-wrap, .today-wrap { max-width: 960px; }
+    .artist-list, .show-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  }
+
+  /* Day chips wrap on phones */
+  .day-tabs { flex-wrap: wrap; }
+  .dtab { min-height: 36px; padding: 0 14px; border-radius: 18px; font-family: var(--font); font-size: 13px; }
+  .dtab.active { background: var(--text); color: #0e0d0c; border-color: var(--text); font-weight: 600; }
+
+  /* Schedule rows */
+  .sched-time { font-size: 13px; min-width: 58px; }
+  .sched-title { font-size: 15px; font-weight: 600; }
+  .sched-sub { font-size: 13px; }
+  .badge { font-size: 9px; letter-spacing: .1em; }
+
+  /* Today */
+  .today-context { background: none; border: none; padding: 0; }
+  .today-context .date { font-size: 12px; letter-spacing: .1em; color: var(--muted); }
+  .today-context .show-name { font-family: var(--display); font-weight: 900; font-size: 44px; line-height: .95; margin-top: 6px; }
+  .today-context .show-day-flag { border-radius: 4px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; padding: 4px 8px; vertical-align: middle; }
+  .today-next { background: var(--accent); color: var(--accent-text); border: none; border-radius: 16px; padding: 20px; }
+  .today-next .label, .today-next .countdown, .today-next .title, .today-next .time { color: var(--accent-text); }
+  .today-next .time { font-family: var(--display); font-weight: 900; font-size: 56px; line-height: .9; }
+  .today-next .title { font-size: 18px; font-weight: 600; }
+
+  /* Notes */
+  .note-entry { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 44px 16px 16px; margin-bottom: 12px; }
+  .note-entry:last-child { border-bottom: 1px solid var(--border); }
+  .note-body { font-size: 15px; }
+  .note-react { min-height: 32px; border-radius: 16px; padding: 0 10px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; }
+  .note-reply-btn { min-height: 32px; font-size: 12px; }
+  #notes .card { background: none; border: none; padding: 0; }
+
+  /* Guest list — stacked rows, no table */
+  .gl-list { display: flex; flex-direction: column; }
+  .gl-row { display: flex; align-items: center; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--border); }
+  .gl-row:last-child { border-bottom: none; }
+  .gl-row .gl-tier { width: 40px; text-align: center; padding: 4px 0; flex-shrink: 0; }
+  .gl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .gl-name { font-size: 15px; font-weight: 600; }
+  .gl-sub { font-size: 13px; color: var(--muted); }
+  .gl-row .gl-status { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; }
+  .gl-row .gl-actions { flex-shrink: 0; }
+  .gl-edit-row { padding: 12px 4px; border-bottom: 1px solid var(--border); }
+  .tier-vip { background: var(--accent); color: var(--accent-text); }
+  .gl-stat span { font-family: var(--display); font-weight: 900; font-size: 26px; }
+
+  /* Inputs — also style fields that have no type attribute (several add forms) */
+  input:not([type]) { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; font-family: var(--font); font-size: 14px; color: var(--text); outline: none; box-sizing: border-box; transition: border-color .15s; }
+  input:not([type]):focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
+  @media (max-width: 500px) {
+    .add-row > * { max-width: none !important; }
+    input:not([type]) { font-size: 16px !important; }
+  }
+  /* Desktop day columns: add-item fields wrap instead of cramming */
+  #day-panels .add-row { flex-wrap: wrap; flex-direction: row; }
+  #day-panels .add-row > * { flex: 1 1 110px; max-width: none !important; min-width: 0; width: auto; }
+  #day-panels .add-row > input[id^="se-"], #day-panels .add-row > input[id^="ss-"] { flex-basis: 100%; }
+  input[type="text"], input[type="date"], input[type="number"], input[type="email"], input[type="password"], input[type="search"], select, textarea { border-radius: 10px; }
+  .add-row input, .add-row select { min-width: 0; }
+  .ros-time-range { white-space: normal; min-width: 96px; }
 </style>
 </head>
 <body>
 
 <!-- ═══ BOOT SCREEN (shown while we check for an existing session) ═══ -->
 <div id="boot-screen">
-  <div class="login-logo" style="margin:0">// OFFSTAGE</div>
+  <div class="boot-mark">OFFSTAGE</div>
 </div>
 
 <!-- ═══ LOGIN SCREEN ═══ -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">// OFFSTAGE</div>
-    <h1 class="login-title" id="login-title">Welcome back</h1>
+    <div class="login-kicker"><span class="login-dot"></span>TOUR MANAGEMENT</div>
+    <h1 class="login-mark">OFF<br>STAGE</h1>
+    <h2 class="login-title" id="login-title">Welcome back</h2>
     <p class="login-sub" id="login-sub">Sign in to access your dashboard.</p>
     <p id="login-build-stamp" style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:1rem">build —</p>
     <!-- Google's own button renders in here (sign-in popup names this site, not Supabase) -->
@@ -580,14 +746,19 @@
 <!-- ═══ HOME SCREEN ═══ -->
 <div id="home-screen">
   <div class="topbar">
-    <div class="topbar-logo">// OFFSTAGE</div>
+    <div class="topbar-logo">OFFSTAGE</div>
     <div style="flex:1"></div>
     <button class="topbar-today" onclick="enterToday()">Today</button>
-    <button class="topbar-action btn-sm" onclick="downloadBackup(this)" style="font-size:11px;padding:5px 10px" title="Download all your data as a JSON file">⬇ Backup</button>
-    <button class="topbar-action btn-sm" onclick="logout()" style="font-size:11px;padding:5px 10px">Sign out</button>
+    <div class="menu-wrap">
+      <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+      <div class="menu-pop">
+        <button onclick="downloadBackup(this)">Download backup</button>
+        <button onclick="logout()">Sign out</button>
+      </div>
+    </div>
   </div>
   <div class="home-wrap">
-    <h1 class="home-title">Your Artists</h1>
+    <h1 class="home-title">Your roster</h1>
     <p class="home-sub" id="home-sub">Tap an artist to manage their shows.</p>
     <div class="artist-list" id="artist-list"></div>
     <div id="new-artist-form">
@@ -603,16 +774,16 @@
         <button class="btn-sm" onclick="hideNewArtistForm()">Cancel</button>
       </div>
     </div>
-    <button class="btn-new" id="btn-new-artist" onclick="showNewArtistForm()">+ Add New Artist</button>
+    <button class="btn-new" id="btn-new-artist" onclick="showNewArtistForm()">+ Add an artist</button>
   </div>
 </div>
 
 <!-- ═══ TODAY SCREEN ═══ -->
 <div id="today-screen">
   <div class="topbar">
-    <button class="topbar-back" onclick="exitToday()">← Back</button>
+    <button class="icon-btn" aria-label="Back" onclick="exitToday()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="topbar-title">Today</div>
-    <button class="topbar-action btn-sm" onclick="renderToday()" style="font-size:11px;padding:5px 10px" title="Refresh">↻</button>
+    <button class="pill-btn" onclick="renderToday()">Refresh</button>
   </div>
   <div class="today-wrap" id="today-wrap"></div>
 </div>
@@ -620,13 +791,18 @@
 <!-- ═══ ARTIST SCREEN (shows list) ═══ -->
 <div id="artist-screen">
   <div class="topbar">
-    <button class="topbar-back topbar-back-artists" onclick="goHome()">← Artists</button>
+    <button class="icon-btn topbar-back-artists" aria-label="Back to roster" onclick="goHome()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="topbar-title" id="artist-screen-name"></div>
     <button class="topbar-today" onclick="enterToday()">Today</button>
-    <button class="topbar-action btn-export tm-only" onclick="toggleTeamPanel()" style="font-size:11px">👥 Team</button>
-    <button class="topbar-action btn-export tm-only" onclick="showEditArtistForm()" style="font-size:11px">✏ Edit</button>
-    <button class="topbar-action btn-delete owner-only" onclick="deleteCurrentArtist()" style="font-size:11px">🗑</button>
-    <button class="topbar-action btn-sm btn-signout" onclick="logout()" style="font-size:11px;padding:5px 10px">Sign out</button>
+    <button class="pill-btn tm-only" onclick="toggleTeamPanel()">Team</button>
+    <div class="menu-wrap">
+      <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+      <div class="menu-pop">
+        <button class="tm-only" onclick="showEditArtistForm()">Edit artist</button>
+        <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
+        <button onclick="logout()">Sign out</button>
+      </div>
+    </div>
   </div>
   <div class="artist-wrap">
     <div id="edit-artist-form" style="display:none;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem">
@@ -714,12 +890,20 @@
 <!-- ═══ APP (dashboard) ═══ -->
 <div id="app">
   <div class="topbar">
-    <button class="topbar-back" onclick="goToArtist()">← Shows</button>
-    <div class="topbar-title" id="tb-title">—</div>
+    <button class="icon-btn" aria-label="Back to shows" onclick="goToArtist()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <div class="topbar-title" id="tb-artist">—</div>
     <button class="topbar-today" onclick="enterToday()">Today</button>
-    <button class="topbar-action btn-export" onclick="openExportModal()">⬇ PDF</button>
-    <button class="topbar-action btn-delete" onclick="deleteCurrentShow()">🗑</button>
-    <button class="topbar-action btn-sm btn-signout" onclick="logout()" style="font-size:11px;padding:5px 10px">Sign out</button>
+    <div class="menu-wrap">
+      <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+      <div class="menu-pop">
+        <button onclick="openExportModal()">Export PDF</button>
+        <button class="danger tm-only" onclick="deleteCurrentShow()">Delete show</button>
+        <button onclick="logout()">Sign out</button>
+      </div>
+    </div>
+  </div>
+  <div class="show-head">
+    <h1 class="show-title" id="tb-title">—</h1>
   </div>
   <div class="stat-row">
     <div class="stat"><div class="stat-num" id="s-days-display">—</div><div class="stat-lbl">Days</div></div>
@@ -728,15 +912,15 @@
     <div class="stat"><div class="stat-num" id="s-contacts-display">—</div><div class="stat-lbl">Contacts</div></div>
   </div>
   <div class="tabs-bar">
-    <button class="tab active" onclick="switchTab('itinerary',this)">Itinerary</button>
-    <button class="tab" onclick="switchTab('ros',this)">Run of Show</button>
-    <button class="tab" onclick="switchTab('locations',this)">Locations</button>
-    <button class="tab" onclick="switchTab('contacts',this)">Contacts</button>
-    <button class="tab" onclick="switchTab('rider',this)" style="display:none">Rider</button>
-    <button class="tab" onclick="switchTab('tasks',this)">Tasks</button>
-    <button class="tab" onclick="switchTab('notes',this)">Notes</button>
-    <button class="tab" onclick="switchTab('guestlist',this)">Guest List</button>
-    <button class="tab" onclick="switchTab('flights',this)">Flights</button>
+    <button class="tab active" data-tab="itinerary" onclick="switchTab('itinerary')">Itinerary</button>
+    <button class="tab" data-tab="ros" onclick="switchTab('ros')">Run of Show</button>
+    <button class="tab" data-tab="locations" onclick="switchTab('locations')">Locations</button>
+    <button class="tab" data-tab="contacts" onclick="switchTab('contacts')">Contacts</button>
+    <button class="tab" data-tab="rider" onclick="switchTab('rider')" style="display:none">Rider</button>
+    <button class="tab" data-tab="tasks" onclick="switchTab('tasks')">Tasks</button>
+    <button class="tab" data-tab="notes" onclick="switchTab('notes')">Notes</button>
+    <button class="tab" data-tab="guestlist" onclick="switchTab('guestlist')">Guest List</button>
+    <button class="tab" data-tab="flights" onclick="switchTab('flights')">Flights</button>
   </div>
   <div class="content">
     <div id="itinerary" class="panel active">
@@ -769,7 +953,7 @@
     <div id="locations" class="panel">
       <div class="loc-section">
         <div class="loc-section-header">
-          <span>🏟 Venue</span>
+          <span>Venue</span>
           <button class="btn-add" onclick="toggleLocForm('venue-form')">+ Add</button>
         </div>
         <div id="venue-form" class="loc-form" style="display:none">
@@ -798,7 +982,7 @@
 
       <div class="loc-section">
         <div class="loc-section-header">
-          <span>🏨 Lodging</span>
+          <span>Lodging</span>
           <button class="btn-add" onclick="toggleLocForm('lodging-form')">+ Add</button>
         </div>
         <div id="lodging-form" class="loc-form" style="display:none">
@@ -835,8 +1019,8 @@
       <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
         <span>Crew</span>
         <span class="export-bar-inline">
-          <button class="export-btn" onclick="exportCrewText(this)">📋 Copy</button>
-          <button class="export-btn" onclick="exportCrewCSV()">⬇ CSV</button>
+          <button class="export-btn" onclick="exportCrewText(this)">Copy</button>
+          <button class="export-btn" onclick="exportCrewCSV()">CSV</button>
         </span>
       </div>
       <div id="crew-list"></div>
@@ -850,14 +1034,14 @@
       <div class="rider-banner">
         <span>This rider belongs to the artist — edits here apply to every one of their shows.</span>
       </div>
-      <div class="section-label">⚙ Technical</div>
+      <div class="section-label">Technical</div>
       <div class="rider-list-box"><div id="rider-tech-list"></div></div>
       <div class="add-row" style="margin-top:8px">
         <input id="rd-tech" placeholder="Add technical requirement">
         <button class="btn-add" onclick="addRider('tech')">Add</button>
       </div>
       <hr class="divider">
-      <div class="section-label">🥤 Hospitality</div>
+      <div class="section-label">Hospitality</div>
       <div class="rider-list-box"><div id="rider-hosp-list"></div></div>
       <div class="add-row" style="margin-top:8px">
         <input id="rd-hosp" placeholder="Add hospitality requirement">
@@ -896,22 +1080,11 @@
       <input type="search" id="guest-search" placeholder="Search guests by name…" class="list-search" oninput="filterGuests(this.value)">
       <div class="export-bar">
         <span class="export-bar-label">Export confirmed guests:</span>
-        <button class="export-btn" onclick="exportGuestsText(this)">📋 Copy</button>
-        <button class="export-btn" onclick="exportGuestsCSV()">⬇ CSV</button>
+        <button class="export-btn" onclick="exportGuestsText(this)">Copy</button>
+        <button class="export-btn" onclick="exportGuestsCSV()">CSV</button>
       </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <table class="gl-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Tier</th>
-              <th>Status</th>
-              <th>Note</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="gl-tbody"></tbody>
-        </table>
+      <div class="card" style="padding:4px 16px">
+        <div class="gl-list" id="gl-tbody"></div>
       </div>
       <div class="add-row gl-add-row" style="margin-top:10px">
         <input id="gl-first" placeholder="First name">
@@ -947,6 +1120,25 @@
       <div class="add-row" style="margin-top:8px">
         <button class="btn-add" onclick="addFlight()">Add flight</button>
       </div>
+    </div>
+  </div>
+
+  <!-- PHONE SECTION NAV (hidden on desktop, where the tab row shows instead) -->
+  <nav class="bottom-nav" aria-label="Show sections">
+    <button class="bn-btn" data-tab="itinerary" onclick="switchTab('itinerary')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Schedule</button>
+    <button class="bn-btn" data-tab="locations" onclick="switchTab('locations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Places</button>
+    <button class="bn-btn" data-tab="contacts" onclick="switchTab('contacts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 010 7M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>People</button>
+    <button class="bn-btn" data-tab="notes" onclick="switchTab('notes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Notes</button>
+    <button class="bn-btn" id="bn-more" onclick="showMoreSheet()"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>More</button>
+  </nav>
+  <div class="more-sheet" id="more-sheet">
+    <div class="sheet-backdrop" onclick="hideMoreSheet()"></div>
+    <div class="sheet-body" role="dialog" aria-label="More sections">
+      <div class="sheet-grip"></div>
+      <button class="sheet-item" data-tab="ros" onclick="switchTab('ros')">Run of show</button>
+      <button class="sheet-item" data-tab="guestlist" onclick="switchTab('guestlist')">Guest list</button>
+      <button class="sheet-item" data-tab="flights" onclick="switchTab('flights')">Flights</button>
+      <button class="sheet-item tm-only" data-tab="tasks" onclick="switchTab('tasks')">Tasks</button>
     </div>
   </div>
 
@@ -1034,7 +1226,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.29-4';
+const APP_VERSION = '2026.09.30-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1639,7 +1831,7 @@ function applyPendingRemote() {
 // ════════════════════════════════
 async function downloadBackup(btn) {
   const orig = btn ? btn.innerHTML : null;
-  if (btn) { btn.innerHTML = '⏳ Backing up…'; btn.disabled = true; }
+  if (btn) { btn.innerHTML = 'Backing up…'; btn.disabled = true; }
   try {
     _artistsCache = null; _showsCache = {};
     const artists = await getArtists();
@@ -1669,7 +1861,7 @@ async function downloadBackup(btn) {
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    if (btn) { btn.innerHTML = '✓ Saved'; setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1500); }
+    if (btn) { btn.innerHTML = 'Saved'; setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1500); }
   } catch (e) {
     console.error('Backup failed:', e);
     alert('Backup failed: ' + (e.message || e));
@@ -1873,7 +2065,7 @@ async function renderToday() {
     html += `<div class="today-section"><div class="today-section-h">Recent Notes</div><div class="card">`;
     html += recentNotes.map(n => {
       const replyCount = (n.replies || []).length;
-      const replyTag = replyCount ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-left:auto">↳ ${replyCount}</span>` : '';
+      const replyTag = replyCount ? `<span style="font-family:var(--mono);font-size:10px;color: var(--accent-ink);margin-left:auto">↳ ${replyCount}</span>` : '';
       return `
       <div class="note-entry" style="padding-right:14px">
         <div class="note-meta"><span>${esc(n.day)} · ${esc(n.time)}</span>${noteAuthorChip(n)}${replyTag}</div>
@@ -1904,6 +2096,7 @@ function showScreen(id) {
     el.style.display = s === id ? (flex ? 'flex' : 'block') : 'none';
   });
   if (id !== 'app') hideRemoteBanner();
+  closeMenus(); hideMoreSheet();
   window.scrollTo(0, 0);
 }
 
@@ -2097,7 +2290,7 @@ async function createInvite(btn) {
   const link = inviteLink(row.token);
   const box = document.getElementById('invite-new');
   box.style.display = 'block';
-  box.innerHTML = `<div style="margin-bottom:6px;color:var(--accent)">New ${esc(roleLabel(role))} link — copied. Expires in 7 days.</div><div>${esc(link)}</div>`;
+  box.innerHTML = `<div style="margin-bottom:6px;color: var(--accent-ink)">New ${esc(roleLabel(role))} link — copied. Expires in 7 days.</div><div>${esc(link)}</div>`;
   await copyToClipboard(link, btn);
   await renderInvites();
 }
@@ -2119,7 +2312,7 @@ async function renderInvites() {
   list.innerHTML = rows.map(i => `<div class="invite-row">
     <span class="role-chip role-${i.role}">${esc(roleLabel(i.role))}</span>
     <div class="invite-meta">Expires ${esc(fmtDateSimple(new Date(i.expires_at)))} · used ${i.uses}×</div>
-    <button class="export-btn" onclick="copyInvite('${esc(i.token)}', this)">📋 Copy</button>
+    <button class="export-btn" onclick="copyInvite('${esc(i.token)}', this)">Copy</button>
     <button class="export-btn" onclick="revokeInvite('${esc(i.token)}')">Revoke</button>
   </div>`).join('');
 }
@@ -2466,6 +2659,7 @@ async function launch() {
 // ════════════════════════════════
 function buildApp() {
   document.getElementById('tb-title').textContent = state.name;
+  document.getElementById('tb-artist').textContent = (currentArtist && currentArtist.name) || state.artist || '';
   document.getElementById('s-days-display').textContent = state.days.length;
   document.getElementById('s-show-display').textContent = state.showDate ? fmtDateSimple(state.showDate) : '—';
   buildDayTabs();
@@ -2480,8 +2674,7 @@ function buildApp() {
   buildFlights();
   renderLocations();
   updateStats();
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===0));
-  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===0));
+  switchTab('itinerary');
 }
 
 // ════════════════════════════════
@@ -3318,7 +3511,8 @@ function autoGrow(el) {
   el.style.height = el.scrollHeight + 'px';
 }
 
-const NOTE_REACTIONS = ['👀', '✓', '❤️'];
+const NOTE_REACTIONS = ['👀', '✓', '❤️'];   // stored keys (kept for existing data)
+const REACTION_LABEL = { '👀': 'SEEN', '✓': 'GOT IT', '❤️': 'LOVE' };
 
 // Author chip for a note or reply. New items carry authorId; older ones only an email.
 function authorChip(item) {
@@ -3335,7 +3529,7 @@ function noteReactionsHTML(n) {
     const list = reactions[em] || [];
     const mine = list.includes(myUid);
     const count = list.length;
-    return `<button class="note-react ${mine?'active':''}" onclick="toggleReaction('${n.id}','${em}')">${em}${count?`<span class="rc">${count}</span>`:''}</button>`;
+    return `<button class="note-react ${mine?'active':''}" onclick="toggleReaction('${n.id}','${em}')">${REACTION_LABEL[em]}${count?`<span class="rc">${count}</span>`:''}</button>`;
   }).join('');
 
   const byPerson = {};
@@ -3346,7 +3540,7 @@ function noteReactionsHTML(n) {
       byPerson[name].push(em);
     }
   }
-  const reactors = Object.entries(byPerson).map(([name, ems]) => `${esc(name)} ${ems.join('')}`).join(' · ');
+  const reactors = Object.entries(byPerson).map(([name, ems]) => `${esc(name)}: ${ems.map(e => REACTION_LABEL[e].toLowerCase()).join(', ')}`).join(' · ');
   const reactorsLine = reactors ? `<div class="note-reactors">${reactors}</div>` : '';
 
   return `<div class="note-reactions">${strip}</div>${reactorsLine}`;
@@ -3630,7 +3824,7 @@ function renderGuestList() {
     <div class="gl-stat"><span class="gl-vip">${vip}</span>VIP</div>`;
 
   if (!state.guests.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:1.5rem">No guests yet.</td></tr>';
+    tbody.innerHTML = '<div class="empty-state">No guests yet.</div>';
     return;
   }
 
@@ -3642,18 +3836,18 @@ function renderGuestList() {
   });
 
   tbody.innerHTML = sorted.map(g => `
-    <tr id="gl-row-${g.id}">
-      <td style="font-weight:500">${esc(g.last)}, ${esc(g.first)}</td>
-      <td><span class="gl-tier tier-${g.tier}">${g.tier.toUpperCase()}</span></td>
-      <td><span class="gl-status st-${g.status}">${esc(g.status)}</span></td>
-      <td class="gl-note-cell" title="${esc(g.note)}">${esc(g.note)||'—'}</td>
-      <td>
-        <div class="gl-actions">
-          <button class="gl-edit-btn" onclick="editGuest('${g.id}')" title="Edit">✏</button>
-          <button class="gl-del-btn"  onclick="deleteGuest('${g.id}')">×</button>
-        </div>
-      </td>
-    </tr>`).join('');
+    <div class="gl-row" id="gl-row-${g.id}">
+      <span class="gl-tier tier-${g.tier}">${g.tier.toUpperCase()}</span>
+      <div class="gl-main">
+        <span class="gl-name">${esc(g.last)}${g.last && g.first ? ', ' : ''}${esc(g.first)}</span>
+        ${g.note ? `<span class="gl-sub">${esc(g.note)}</span>` : ''}
+      </div>
+      <span class="gl-status st-${g.status}">${esc(g.status)}</span>
+      <div class="gl-actions">
+        <button class="gl-edit-btn" onclick="editGuest('${g.id}')" aria-label="Edit guest">✏</button>
+        <button class="gl-del-btn" onclick="deleteGuest('${g.id}')" aria-label="Remove guest">×</button>
+      </div>
+    </div>`).join('');
 
   const search = document.getElementById('guest-search');
   if (search && search.value) filterGuests(search.value);
@@ -3696,18 +3890,17 @@ function editGuest(id) {
   if (!row) return;
   const tierOpts   = ['ga','aa','vip'].map(t => `<option value="${t}" ${t===g.tier?'selected':''}>${t.toUpperCase()}</option>`).join('');
   const statusOpts = ['confirmed','pending','denied'].map(s => `<option value="${s}" ${s===g.status?'selected':''}>${s}</option>`).join('');
+  row.className = 'gl-edit-row';
   row.innerHTML = `
-    <td colspan="5">
-      <div class="sched-inline-form" style="flex-wrap:wrap;gap:6px;padding:4px 0">
-        <input id="ge-fn-${id}" type="text" value="${esc(g.first)}" placeholder="First" style="width:100px">
-        <input id="ge-ln-${id}" type="text" value="${esc(g.last)}"  placeholder="Last"  style="width:120px">
-        <select id="ge-ti-${id}" style="width:75px">${tierOpts}</select>
-        <select id="ge-st-${id}" style="width:110px">${statusOpts}</select>
-        <input id="ge-nt-${id}" type="text" value="${esc(g.note)}" placeholder="Note" style="flex:1;min-width:100px">
+      <div class="sched-inline-form" style="flex-wrap:wrap;gap:6px">
+        <input id="ge-fn-${id}" type="text" value="${esc(g.first)}" placeholder="First" style="flex:1;min-width:0">
+        <input id="ge-ln-${id}" type="text" value="${esc(g.last)}"  placeholder="Last"  style="flex:1;min-width:0">
+        <select id="ge-ti-${id}" style="flex:1;min-width:0">${tierOpts}</select>
+        <select id="ge-st-${id}" style="flex:1;min-width:0">${statusOpts}</select>
+        <input id="ge-nt-${id}" type="text" value="${esc(g.note)}" placeholder="Note" style="flex-basis:100%;min-width:0">
         <button class="sched-save-btn"   onclick="saveGuestEdit('${id}')">Save</button>
         <button class="sched-cancel-btn" onclick="renderGuestList()">Cancel</button>
-      </div>
-    </td>`;
+      </div>`;
   document.getElementById('ge-fn-' + id)?.focus();
 }
 
@@ -3867,12 +4060,30 @@ function updateStats() {
 // ════════════════════════════════
 // TABS
 // ════════════════════════════════
-function switchTab(id, el) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById(id)?.classList.add('active');
+const MORE_TABS = ['ros', 'guestlist', 'flights', 'tasks', 'rider'];
+function switchTab(id) {
+  if (!document.getElementById(id)) return;
+  document.querySelectorAll('[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.getElementById('bn-more')?.classList.toggle('active', MORE_TABS.includes(id));
+  document.querySelectorAll('#app .panel').forEach(p => p.classList.toggle('active', p.id === id));
+  hideMoreSheet();
 }
+function showMoreSheet() { closeMenus(); document.getElementById('more-sheet')?.classList.add('open'); }
+function hideMoreSheet() { document.getElementById('more-sheet')?.classList.remove('open'); }
+
+// ⋯ menus in the top bars
+function closeMenus(except) {
+  document.querySelectorAll('.menu-pop.open').forEach(m => { if (m !== except) m.classList.remove('open'); });
+}
+function toggleMenu(btn) {
+  const pop = btn.nextElementSibling;
+  closeMenus(pop);
+  pop.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.menu-wrap')) closeMenus();
+  else if (e.target.closest('.menu-pop button')) setTimeout(() => closeMenus(), 0);
+});
 
 // ════════════════════════════════
 // EXPORT (PDF)
@@ -4001,7 +4212,7 @@ function generatePDF() {
       const rank = v => { const i = dayOrder.indexOf(v.day); return v.day && i>=0 ? i : 999; };
       [...state.venues].sort((a,b)=>rank(a)-rank(b)).forEach(v => {
         const dayTag = v.day ? ` <span style="font-size:11px;color:#888;font-weight:400">· ${esc(v.day)}</span>` : '';
-        html += `<div class="loc-block"><h3>🏟 ${esc(v.name)}${dayTag}</h3><div class="loc-grid">`;
+        html += `<div class="loc-block"><h3>${esc(v.name)}${dayTag}</h3><div class="loc-grid">`;
         if (v.address)  html += `<div class="loc-field full"><div class="lf-label">Address</div><div class="lf-val">${esc(v.address)}</div></div>`;
         if (v.contact)  html += `<div class="loc-field"><div class="lf-label">Venue contact</div><div class="lf-val">${esc(v.contact)}</div></div>`;
         if (v.phone)    html += `<div class="loc-field"><div class="lf-label">Phone / email</div><div class="lf-val">${esc(v.phone)}</div></div>`;
@@ -4017,7 +4228,7 @@ function generatePDF() {
     }
     if (state.lodging && state.lodging.length) {
       state.lodging.forEach(l => {
-        html += `<div class="loc-block"><h3>🏨 ${esc(l.name)}</h3><div class="loc-grid">`;
+        html += `<div class="loc-block"><h3>${esc(l.name)}</h3><div class="loc-grid">`;
         if (l.address)  html += `<div class="loc-field full"><div class="lf-label">Address</div><div class="lf-val">${esc(l.address)}</div></div>`;
         if (l.checkin)  html += `<div class="loc-field"><div class="lf-label">Check-in</div><div class="lf-val">${esc(l.checkin)}</div></div>`;
         if (l.checkout) html += `<div class="loc-field"><div class="lf-label">Check-out</div><div class="lf-val">${esc(l.checkout)}</div></div>`;
@@ -4064,7 +4275,7 @@ function generatePDF() {
   }
 
   const now = new Date();
-  html += `<div class="footer"><span>Generated by // OFFSTAGE</span><span>${now.toLocaleDateString()} ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>`;
+  html += `<div class="footer"><span>Generated by OFFSTAGE</span><span>${now.toLocaleDateString()} ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>`;
   html += `<script>window.onload=function(){window.print();}<\/script></body></html>`;
 
   const blob = new Blob([html], { type: 'text/html' });
@@ -4113,6 +4324,7 @@ Object.assign(window, {
   downloadBackup, duplicateShow,
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
+  toggleMenu, showMoreSheet, hideMoreSheet,
 });
 </script>
 </body>
