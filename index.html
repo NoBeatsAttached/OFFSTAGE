@@ -700,6 +700,55 @@
   .tier-vip { background: var(--accent); color: var(--accent-text); }
   .gl-stat span { font-family: var(--display); font-weight: 900; font-size: 26px; }
 
+  /* Desktop sidebar + right rail */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .link-btn { background: none; border: none; padding: 6px 0; color: var(--accent-ink); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .app-sidebar, .app-rail { display: none; }
+  .sb-mark { font-family: var(--display); font-weight: 900; font-size: 26px; color: var(--accent); letter-spacing: .02em; padding: 0 8px; background: none; border: none; text-align: left; cursor: pointer; }
+  .sb-artist { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; text-align: left; }
+  .sb-artist-av { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--accent-text); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 900; font-size: 15px; flex-shrink: 0; }
+  .sb-artist-name { font-size: 14px; font-weight: 600; display: block; }
+  .sb-artist-sub { font-size: 12px; color: var(--muted); display: block; }
+  .sb-label { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--dim); padding: 0 10px 6px; }
+  .sb-show { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 10px; border-radius: 8px; border: none; background: none; color: #d6d0c8; font-size: 14px; cursor: pointer; text-align: left; }
+  .sb-show:hover { background: var(--surface); }
+  .sb-show.active { background: #231a30; color: var(--text); font-weight: 600; }
+  .sb-show-date { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 48px; flex-shrink: 0; }
+  .sb-show.active .sb-show-date { color: var(--accent-ink); }
+  .sb-new { margin-top: 4px; min-height: 40px; width: 100%; border-radius: 8px; border: 1.5px dashed var(--border2); background: transparent; color: #bdb6ad; font-size: 13px; cursor: pointer; }
+  .sb-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+  .sb-foot button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border-radius: 8px; border: none; background: none; color: #d6d0c8; font-size: 14px; cursor: pointer; text-align: left; }
+  .sb-foot button:hover { background: var(--surface); }
+  .rail-next { background: var(--accent); color: var(--accent-text); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .rail-next .rn-label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; font-weight: 500; }
+  .rail-next .rn-big { font-family: var(--display); font-weight: 900; font-size: 40px; line-height: .95; }
+  .rail-next .rn-sub { font-size: 13px; }
+  .rail-next.quiet { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .rail-h { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .rail-h .link-btn { font-family: var(--font); letter-spacing: 0; text-transform: none; }
+  .rail-note { padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .rail-note p { margin: 0; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+  .rail-note .rn-meta { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; color: var(--dim); flex-wrap: wrap; }
+  #rail-note-input { min-height: 64px; max-height: 200px; resize: none; }
+  @media (min-width: 1100px) {
+    #app { padding-left: 240px; }
+    .app-sidebar { display: flex; flex-direction: column; gap: 18px; position: fixed; top: 0; bottom: 0; left: 0; width: 240px; box-sizing: border-box; padding: 20px 14px; background: var(--rail); border-right: 1px solid var(--border); overflow-y: auto; z-index: 150; }
+  }
+  @media (min-width: 1400px) {
+    #app { padding-right: 340px; }
+    .app-rail { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: 340px; box-sizing: border-box; padding: 24px 20px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; z-index: 150; }
+  }
+
+  /* Version history modal */
+  .hist-modal { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .hist-box { max-width: 560px; max-height: 84vh; overflow-y: auto; }
+  .hist-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-main { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 3px; }
+  .hist-when { font-size: 14px; font-weight: 600; }
+  .hist-what { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .hist-row .pill-btn { min-height: 40px; }
+
   /* Inputs — also style fields that have no type attribute (several add forms) */
   input:not([type]) { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; font-family: var(--font); font-size: 14px; color: var(--text); outline: none; box-sizing: border-box; transition: border-color .15s; }
   input:not([type]):focus { border-color: var(--accent); }
@@ -849,6 +898,7 @@
     <p class="home-sub" style="margin-top:.5rem" id="artist-sub">Select a show or add a new one.</p>
     <div class="show-list" id="show-list"></div>
     <button class="btn-new tm-only" onclick="showNewShowForm()">+ Add New Show</button>
+    <button class="link-btn tm-only" style="margin-top:14px" onclick="openDeletedShows()">Recently deleted shows</button>
   </div>
 </div>
 
@@ -890,6 +940,17 @@
 
 <!-- ═══ APP (dashboard) ═══ -->
 <div id="app">
+  <!-- DESKTOP SIDEBAR (1100px+) — filled by renderSidebar() -->
+  <aside class="app-sidebar" id="app-sidebar" aria-label="Shows"></aside>
+  <!-- DESKTOP RIGHT RAIL (1400px+) — filled by renderRail() -->
+  <aside class="app-rail" id="app-rail" aria-label="Show day and team notes">
+    <div id="rail-next"></div>
+    <div class="rail-h"><span>Team notes</span><button class="link-btn" onclick="switchTab('notes')">Open all</button></div>
+    <div id="rail-notes"></div>
+    <label class="sr-only" for="rail-note-input">New note</label>
+    <textarea id="rail-note-input" placeholder="Note for the team…" oninput="autoGrow(this)"></textarea>
+    <button class="btn-primary" style="margin-top:0" onclick="railPostNote()">Post note</button>
+  </aside>
   <div class="topbar">
     <button class="icon-btn" aria-label="Back to shows" onclick="goToArtist()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="topbar-title" id="tb-artist">—</div>
@@ -898,6 +959,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button onclick="openExportModal()">Export PDF</button>
+        <button class="tm-only" onclick="openHistory()">Version history</button>
         <button class="danger tm-only" onclick="deleteCurrentShow()">Delete show</button>
         <button onclick="logout()">Sign out</button>
       </div>
@@ -1166,6 +1228,19 @@
   </div>
 </div>
 
+<!-- VERSION HISTORY / RECENTLY DELETED (TMs) -->
+<div id="history-modal" class="hist-modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeHistory()"></div>
+  <div class="modal-box hist-box" role="dialog" aria-labelledby="hist-title">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px">
+      <div class="modal-title" id="hist-title" style="flex:1">Version history</div>
+      <button class="icon-btn" aria-label="Close" onclick="closeHistory()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-sub" id="hist-sub"></div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
 <!-- Live-update banner -->
 <button class="remote-banner" id="remote-banner" onclick="applyPendingRemote()"></button>
 
@@ -1227,7 +1302,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.30-2';
+const APP_VERSION = '2026.09.30-3';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1732,6 +1807,7 @@ async function deleteShowRow(artistId, showId) {
 let _saveChain = Promise.resolve();
 function saveState() {
   if (!currentShowId || !state) return Promise.resolve();
+  try { renderRail(); } catch (e) { /* rail is cosmetic */ }
   const id = currentShowId, snapshot = state;
   _saveChain = _saveChain.catch(() => {}).then(() => saveShowState(id, snapshot));
   return _saveChain;
@@ -2549,6 +2625,185 @@ async function openShow(showId) {
 }
 
 // ════════════════════════════════
+// DESKTOP SIDEBAR + RIGHT RAIL
+// Hidden below 1100px / 1400px by CSS; always rendered so resizing just works.
+// ════════════════════════════════
+async function renderSidebar() {
+  const el = document.getElementById('app-sidebar');
+  if (!el || !currentArtistId) return;
+  const artist = currentArtist || (await getArtists()).find(a => a.id === currentArtistId);
+  const shows = await getShows(currentArtistId);
+  const isTm = myRoles[currentArtistId] === 'tm';
+  const initial = esc(((artist && artist.name) || '?').trim().charAt(0).toUpperCase());
+  const showRows = shows.map(sh => {
+    const d = sh.showDate ? parseLocalDate(sh.showDate) : null;
+    const date = d ? d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase() : 'TBD';
+    return `<button class="sb-show${sh.id === currentShowId ? ' active' : ''}" onclick="openShow('${esc(sh.id)}')"><span class="sb-show-date">${esc(date)}</span><span>${esc(sh.name)}</span></button>`;
+  }).join('');
+  el.innerHTML = `
+    <button class="sb-mark" onclick="goHome()">OFFSTAGE</button>
+    <button class="sb-artist" onclick="goHome()">
+      <span class="sb-artist-av">${initial}</span>
+      <span style="flex:1;min-width:0"><span class="sb-artist-name">${esc(artist ? artist.name : '')}</span><span class="sb-artist-sub">Switch artist</span></span>
+    </button>
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <div class="sb-label">SHOWS</div>
+      ${showRows || '<div class="empty-state" style="padding:.5rem 10px;text-align:left">No shows yet.</div>'}
+      ${isTm ? '<button class="sb-new" onclick="showNewShowForm()">+ New show</button>' : ''}
+    </nav>
+    <div class="sb-foot">
+      ${isTm ? '<button onclick="goToArtistTeam()">Team &amp; invites</button>' : ''}
+      <button onclick="goToArtist()">All shows</button>
+      <button onclick="logout()">Sign out</button>
+    </div>`;
+}
+async function goToArtistTeam() {
+  await goToArtist();
+  const p = document.getElementById('team-panel');
+  if (p && p.style.display === 'none') await toggleTeamPanel();
+}
+
+function renderRail() {
+  if (!state) return;
+  const next = document.getElementById('rail-next');
+  const list = document.getElementById('rail-notes');
+  if (!next || !list) return;
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const inRun = (state.days || []).some(d => d.toDateString() === todayStr);
+  let card = '';
+  if (inRun) {
+    const items = sortSchedule(state.schedules?.[todayStr] || []);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const up = items.find(it => { const m = timeToMins(it.time); return m !== 9999 && m >= nowMins; });
+    if (up) {
+      const mins = timeToMins(up.time) - nowMins;
+      const inTxt = mins < 60 ? `IN ${mins} MIN` : `IN ${Math.floor(mins / 60)}H ${mins % 60}M`;
+      card = `<div class="rail-next"><span class="rn-label">NEXT UP · ${inTxt}</span><span class="rn-big">${esc(up.time)} ${esc(up.title)}</span>${up.sub ? `<span class="rn-sub">${esc(up.sub)}</span>` : ''}</div>`;
+    } else {
+      card = `<div class="rail-next quiet"><span class="rn-label">TODAY</span><span class="rn-big">Done for today</span></div>`;
+    }
+  } else if (state.showDate) {
+    const start = new Date(now); start.setHours(0, 0, 0, 0);
+    const days = Math.round((state.showDate - start) / 86400000);
+    if (days > 0) card = `<div class="rail-next"><span class="rn-label">SHOW DAY</span><span class="rn-big">IN ${days} DAY${days === 1 ? '' : 'S'}</span><span class="rn-sub">${esc(fmtDate(state.showDate))}</span></div>`;
+    else card = `<div class="rail-next quiet"><span class="rn-label">RUN COMPLETE</span><span class="rn-big">${esc(fmtDateSimple(state.showDate))}</span></div>`;
+  } else {
+    card = `<div class="rail-next quiet"><span class="rn-label">SHOW DAY</span><span class="rn-big">Not set</span></div>`;
+  }
+  next.innerHTML = card;
+  const notes = (state.notes || []).slice(0, 5);
+  list.innerHTML = notes.length ? notes.map(n => {
+    const replies = (n.replies || []).length;
+    return `<div class="rail-note"><div class="rn-meta">${noteAuthorChip(n)}<span>${esc(n.time)}</span>${replies ? `<span>· ${replies} repl${replies === 1 ? 'y' : 'ies'}</span>` : ''}</div><p>${esc(n.txt)}</p></div>`;
+  }).join('') : '<div class="empty-state" style="padding:.75rem 0">No notes yet.</div>';
+}
+
+function railPostNote() {
+  const ta = document.getElementById('rail-note-input');
+  const txt = ta.value.trim();
+  if (!txt || !state) return;
+  const today = (state.days || []).find(d => d.toDateString() === new Date().toDateString());
+  state.notes.unshift({
+    id: uid(), txt, day: today ? dayLabel(today) : 'All days',
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    author: myDisplayName(), authorId: myUid, authorEmail: myEmail, reactions: {}, replies: [],
+  });
+  ta.value = ''; autoGrow(ta);
+  renderNotes();
+  saveState();
+}
+
+// ════════════════════════════════
+// VERSION HISTORY + RECENTLY DELETED (TMs only; the database enforces it)
+// Every change to a show saves the version BEFORE it (last 100 per show).
+// ════════════════════════════════
+function histSummary(st) {
+  const s = sanitizeState(st || {});
+  const sched = Object.values(s.schedules).reduce((n, l) => n + l.length, 0);
+  const bits = [`${sched} schedule`, `${s.notes.length} notes`, `${s.guests.length} guests`, `${s.contacts.length} contacts`];
+  return bits.join(' · ');
+}
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+let _histRows = [];
+function openHistoryModal(title, sub) {
+  document.getElementById('hist-title').textContent = title;
+  document.getElementById('hist-sub').textContent = sub;
+  document.getElementById('hist-list').innerHTML = '<div class="empty-state">Loading…</div>';
+  document.getElementById('history-modal').style.display = 'flex';
+}
+function closeHistory() { document.getElementById('history-modal').style.display = 'none'; _histRows = []; }
+
+async function openHistory() {
+  if (!currentShowId) return;
+  openHistoryModal('Version history', 'Each entry is how the show looked just before someone changed it. Restoring keeps a copy of the current version, so you can undo a restore.');
+  const { data, error } = await sb.from('show_history')
+    .select('id, name, show_date, state, changed_at, changed_by, action')
+    .eq('show_id', currentShowId).order('id', { ascending: false }).limit(60);
+  const list = document.getElementById('hist-list');
+  if (error) { list.innerHTML = `<div class="empty-state">${esc(error.message)}</div>`; return; }
+  _histRows = data || [];
+  if (!_histRows.length) { list.innerHTML = '<div class="empty-state">No earlier versions yet. They appear after the first edit.</div>'; return; }
+  list.innerHTML = _histRows.map((r, i) => `
+    <div class="hist-row">
+      <div class="hist-main">
+        <span class="hist-when">${esc(fmtWhen(r.changed_at))}</span>
+        <span class="hist-what">Before ${esc(nameFor(r.changed_by))}'s change · ${esc(histSummary(r.state))}</span>
+      </div>
+      <button class="pill-btn" onclick="restoreVersion(${i})">Restore</button>
+    </div>`).join('');
+}
+
+async function restoreVersion(i) {
+  const r = _histRows[i];
+  if (!r || !currentShowId) return;
+  if (!confirm(`Restore the show to how it was on ${fmtWhen(r.changed_at)}?\n\nEveryone on the team will see it. The current version is kept in history, so you can undo this.`)) return;
+  const restored = parseShowRow({ id: currentShowId, artist_id: state.artistId, name: r.name, show_date: r.show_date, state: r.state });
+  state = restored;
+  try { await saveShowState(currentShowId, restored); } catch { return; }
+  _showsCache[currentArtistId] = null;
+  closeHistory();
+  buildApp();
+}
+
+async function openDeletedShows() {
+  if (!currentArtistId) return;
+  openHistoryModal('Recently deleted shows', 'Shows deleted from this artist. Restoring brings the show back exactly as it was when it was deleted.');
+  const list = document.getElementById('hist-list');
+  const { data, error } = await sb.from('show_history')
+    .select('id, show_id, name, show_date, state, changed_at, changed_by, action')
+    .eq('artist_id', currentArtistId).eq('action', 'delete').order('id', { ascending: false }).limit(50);
+  if (error) { list.innerHTML = `<div class="empty-state">${esc(error.message)}</div>`; return; }
+  const live = new Set((await getShows(currentArtistId)).map(s => s.id));
+  const seen = new Set();
+  _histRows = (data || []).filter(r => !live.has(r.show_id) && !seen.has(r.show_id) && seen.add(r.show_id));
+  if (!_histRows.length) { list.innerHTML = '<div class="empty-state">Nothing deleted recently.</div>'; return; }
+  list.innerHTML = _histRows.map((r, i) => `
+    <div class="hist-row">
+      <div class="hist-main">
+        <span class="hist-when">${esc(r.name || 'Untitled show')}</span>
+        <span class="hist-what">Deleted ${esc(fmtWhen(r.changed_at))} by ${esc(nameFor(r.changed_by))} · ${esc(histSummary(r.state))}</span>
+      </div>
+      <button class="pill-btn" onclick="restoreDeletedShow(${i})">Restore</button>
+    </div>`).join('');
+}
+
+async function restoreDeletedShow(i) {
+  const r = _histRows[i];
+  if (!r) return;
+  if (!confirm(`Bring back "${r.name || 'Untitled show'}"?`)) return;
+  try {
+    must(await sb.from('shows').insert({ id: r.show_id, artist_id: currentArtistId, name: r.name || 'Restored show', show_date: r.show_date, state: r.state || {} }), 'Restore show');
+  } catch (e) { alert(e.message); return; }
+  _showsCache[currentArtistId] = null;
+  closeHistory();
+  await renderArtistScreen(currentArtistId);
+}
+
+// ════════════════════════════════
 // HELPERS
 // ════════════════════════════════
 function fmtDateSimple(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
@@ -2676,6 +2931,8 @@ function buildApp() {
   renderLocations();
   updateStats();
   switchTab('itinerary');
+  renderRail();
+  renderSidebar();
 }
 
 // ════════════════════════════════
@@ -3600,6 +3857,7 @@ function renderNotes() {
     : state.notes.filter(n => n.day===filter || n.day==='All days');
   if(!state.notes.length){ list.innerHTML='<div class="empty-state">No notes yet.</div>'; return; }
   if(!notes.length){ list.innerHTML=`<div class="empty-state">No notes for ${esc(filter)}.</div>`; return; }
+  try { renderRail(); } catch (e) {}
   list.innerHTML=notes.map(n=>{
     const replies = (n.replies || []).map(r => replyHTML(n.id, r)).join('');
     return `
@@ -4326,6 +4584,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
+  railPostNote, goToArtistTeam, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
