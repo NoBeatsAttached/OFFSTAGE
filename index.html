@@ -723,7 +723,7 @@
   .sb-foot button:hover { background: var(--surface); }
   .rail-next { background: var(--accent); color: var(--accent-text); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
   .rail-next .rn-label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; font-weight: 500; }
-  .rail-next .rn-big { font-family: var(--display); font-weight: 900; font-size: 40px; line-height: .95; }
+  .rail-next .rn-big { font-family: var(--display); font-weight: 900; font-size: 40px; line-height: .95; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .rail-next .rn-sub { font-size: 13px; }
   .rail-next.quiet { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
   .rail-h { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
@@ -740,6 +740,12 @@
     #app { padding-right: 340px; }
     .app-rail { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: 340px; box-sizing: border-box; padding: 24px 20px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; z-index: 150; }
   }
+
+  /* Feedback */
+  .fb-email { font-family: var(--mono); font-size: 16px; color: var(--text); background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px; margin: 4px 0 14px; text-align: center; user-select: all; word-break: break-all; }
+  .fb-open { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; text-decoration: none; }
+  .fb-build { font-size: 12px; color: var(--dim); margin-top: 12px; }
+  .fb-build span { font-family: var(--mono); color: var(--muted); }
 
   /* Save status pill */
   .sync-pill { position: fixed; left: 50%; top: calc(62px + env(safe-area-inset-top)); transform: translate(-50%, -8px); z-index: 450; padding: 7px 14px; border-radius: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; background: var(--surface3); color: var(--text); border: 1px solid var(--border2); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; }
@@ -822,7 +828,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button onclick="downloadBackup(this)">Download backup</button>
-        <button onclick="sendFeedback()">Send feedback</button>
+        <button onclick="sendFeedback()">Feedback</button>
         <button onclick="logout()">Sign out</button>
       </div>
     </div>
@@ -869,7 +875,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button class="tm-only" onclick="showEditArtistForm()">Edit artist</button>
-        <button onclick="sendFeedback()">Send feedback</button>
+        <button onclick="sendFeedback()">Feedback</button>
         <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
         <button onclick="logout()">Sign out</button>
       </div>
@@ -985,7 +991,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button onclick="openExportModal()">Export PDF</button>
-        <button onclick="sendFeedback()">Send feedback</button>
+        <button onclick="sendFeedback()">Feedback</button>
         <button class="tm-only" onclick="openHistory()">Version history</button>
         <button class="danger tm-only" onclick="deleteCurrentShow()">Delete show</button>
         <button onclick="logout()">Sign out</button>
@@ -1288,6 +1294,24 @@
   </div>
 </div>
 
+<!-- FEEDBACK -->
+<div id="feedback-modal" class="hist-modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeFeedback()"></div>
+  <div class="modal-box" role="dialog" aria-labelledby="fb-title" style="max-width:440px">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px">
+      <div class="modal-title" id="fb-title" style="flex:1">Email us with feedback</div>
+      <button class="icon-btn" aria-label="Close" onclick="closeFeedback()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-sub">Something broken, confusing, or missing? Tell us — screenshots help.</div>
+    <div class="fb-email">offstagetouring@gmail.com</div>
+    <div class="modal-actions" style="flex-wrap:wrap">
+      <button class="btn-primary" onclick="copyFeedbackEmail(this)">Copy email</button>
+      <a class="btn-sm fb-open" id="fb-open" href="mailto:offstagetouring@gmail.com">Open email app</a>
+    </div>
+    <div class="fb-build">If it's a bug, mention build <span id="fb-build"></span>.</div>
+  </div>
+</div>
+
 <!-- Save status (Saving… / Offline / Saved) -->
 <div id="sync-pill" class="sync-pill" role="status" aria-live="polite"></div>
 
@@ -1352,7 +1376,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.02-3';
+const APP_VERSION = '2026.10.02-4';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -2828,33 +2852,24 @@ async function removeMember(userId) {
 // ════════════════════════════════
 // FEEDBACK — opens the tester's email app, pre-filled with useful context
 // ════════════════════════════════
+// ════════════════════════════════
+// FEEDBACK — "Email us with feedback": copy the address, or open the mail app
+// ════════════════════════════════
 const FEEDBACK_EMAIL = 'offstagetouring@gmail.com';
-function feedbackHref() {
-  const screen = ['app', 'today-screen', 'artist-screen', 'home-screen', 'setup-screen']
-    .find(id => document.getElementById(id)?.style.display === 'block' || document.getElementById(id)?.style.display === 'flex') || 'unknown';
-  const where = {
-    'app': `Show "${state ? state.name : ''}" (${document.querySelector('#app .panel.active')?.id || ''})`,
-    'today-screen': 'Today view', 'artist-screen': `Artist "${currentArtist ? currentArtist.name : ''}"`,
-    'home-screen': 'Roster', 'setup-screen': 'New show form',
-  }[screen] || screen;
-  const r = currentArtistId ? (myRoles[currentArtistId] || 'crew') : (canCreateArtists() ? 'tm' : 'crew');
-  const role = r === 'tm' ? 'TM' : roleLabel(r);
-  const body = [
-    "What happened, or what would make it better?", '', '', '',
-    '— — — (leave this part, it helps us fix things) — — —',
-    `Build: ${APP_VERSION}`,
-    `Screen: ${where}`,
-    `Role: ${role}`,
-    `Signed in as: ${myEmail}`,
-    `Device: ${navigator.userAgent}`,
-    `Screen size: ${window.innerWidth}×${window.innerHeight}`,
-  ].join('\n');
+function feedbackMailto() {
+  const where = document.getElementById('app')?.style.display === 'block' && state ? `Show "${state.name}"` : '';
+  const body = ['What happened, or what would make it better?', '', '', '',
+    `— Build ${APP_VERSION}${where ? ' · ' + where : ''} · ${window.innerWidth}x${window.innerHeight}`].join('\n');
   return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('OFFSTAGE feedback')}&body=${encodeURIComponent(body)}`;
 }
 function sendFeedback() {
-  closeMenus();
-  window.location.href = feedbackHref();
+  closeMenus(); hideMoreSheet();
+  document.getElementById('fb-build').textContent = APP_VERSION;
+  document.getElementById('fb-open').setAttribute('href', feedbackMailto());
+  document.getElementById('feedback-modal').style.display = 'flex';
 }
+function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+function copyFeedbackEmail(btn) { copyToClipboard(FEEDBACK_EMAIL, btn); }
 
 function inviteLink(token) { return location.origin + location.pathname + '?invite=' + token; }
 
@@ -3166,7 +3181,7 @@ async function renderSidebar() {
     <div class="sb-foot">
       ${isTm ? '<button onclick="goToArtistTeam()">Team &amp; invites</button>' : ''}
       <button onclick="goToArtist()">All shows</button>
-      <button onclick="sendFeedback()">Send feedback</button>
+      <button onclick="sendFeedback()">Feedback</button>
       <button onclick="logout()">Sign out</button>
     </div>`;
 }
@@ -5177,7 +5192,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, setViewAs, allowBack, sendFeedback, feedbackHref, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, allowBack, sendFeedback, closeFeedback, copyFeedbackEmail, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
