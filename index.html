@@ -822,6 +822,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button onclick="downloadBackup(this)">Download backup</button>
+        <button onclick="sendFeedback()">Send feedback</button>
         <button onclick="logout()">Sign out</button>
       </div>
     </div>
@@ -868,6 +869,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button class="tm-only" onclick="showEditArtistForm()">Edit artist</button>
+        <button onclick="sendFeedback()">Send feedback</button>
         <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
         <button onclick="logout()">Sign out</button>
       </div>
@@ -983,6 +985,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button onclick="openExportModal()">Export PDF</button>
+        <button onclick="sendFeedback()">Send feedback</button>
         <button class="tm-only" onclick="openHistory()">Version history</button>
         <button class="danger tm-only" onclick="deleteCurrentShow()">Delete show</button>
         <button onclick="logout()">Sign out</button>
@@ -1349,7 +1352,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.02-2';
+const APP_VERSION = '2026.10.02-3';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -2822,6 +2825,37 @@ async function removeMember(userId) {
   await renderTeam();
 }
 
+// ════════════════════════════════
+// FEEDBACK — opens the tester's email app, pre-filled with useful context
+// ════════════════════════════════
+const FEEDBACK_EMAIL = 'offstagetouring@gmail.com';
+function feedbackHref() {
+  const screen = ['app', 'today-screen', 'artist-screen', 'home-screen', 'setup-screen']
+    .find(id => document.getElementById(id)?.style.display === 'block' || document.getElementById(id)?.style.display === 'flex') || 'unknown';
+  const where = {
+    'app': `Show "${state ? state.name : ''}" (${document.querySelector('#app .panel.active')?.id || ''})`,
+    'today-screen': 'Today view', 'artist-screen': `Artist "${currentArtist ? currentArtist.name : ''}"`,
+    'home-screen': 'Roster', 'setup-screen': 'New show form',
+  }[screen] || screen;
+  const r = currentArtistId ? (myRoles[currentArtistId] || 'crew') : (canCreateArtists() ? 'tm' : 'crew');
+  const role = r === 'tm' ? 'TM' : roleLabel(r);
+  const body = [
+    "What happened, or what would make it better?", '', '', '',
+    '— — — (leave this part, it helps us fix things) — — —',
+    `Build: ${APP_VERSION}`,
+    `Screen: ${where}`,
+    `Role: ${role}`,
+    `Signed in as: ${myEmail}`,
+    `Device: ${navigator.userAgent}`,
+    `Screen size: ${window.innerWidth}×${window.innerHeight}`,
+  ].join('\n');
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('OFFSTAGE feedback')}&body=${encodeURIComponent(body)}`;
+}
+function sendFeedback() {
+  closeMenus();
+  window.location.href = feedbackHref();
+}
+
 function inviteLink(token) { return location.origin + location.pathname + '?invite=' + token; }
 
 async function createInvite(btn) {
@@ -3132,6 +3166,7 @@ async function renderSidebar() {
     <div class="sb-foot">
       ${isTm ? '<button onclick="goToArtistTeam()">Team &amp; invites</button>' : ''}
       <button onclick="goToArtist()">All shows</button>
+      <button onclick="sendFeedback()">Send feedback</button>
       <button onclick="logout()">Sign out</button>
     </div>`;
 }
@@ -5142,7 +5177,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, setViewAs, allowBack, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, allowBack, sendFeedback, feedbackHref, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
