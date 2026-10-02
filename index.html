@@ -218,6 +218,7 @@
   .gl-del-btn  { background: none; border: none; color: var(--dim); font-size: 14px; cursor: pointer; padding: 3px 5px; border-radius: 4px; transition: color .15s; }
   .gl-del-btn:hover { color: var(--red); }
   .readonly .gl-del-btn  { display: none !important; }
+  .readonly .gl-actions.mine .gl-del-btn, .readonly .gl-actions.mine .gl-edit-btn { display: inline-block !important; }
   .readonly .gl-edit-btn { display: none !important; }
   .gl-note-edit { display: flex; gap: 6px; align-items: center; }
   .gl-note-edit input { flex: 1; background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 8px; font-size: 12px; color: var(--text); font-family: var(--font); outline: none; }
@@ -740,6 +741,13 @@
     .app-rail { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: 340px; box-sizing: border-box; padding: 24px 20px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; z-index: 150; }
   }
 
+  /* Save status pill */
+  .sync-pill { position: fixed; left: 50%; top: calc(62px + env(safe-area-inset-top)); transform: translate(-50%, -8px); z-index: 450; padding: 7px 14px; border-radius: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; background: var(--surface3); color: var(--text); border: 1px solid var(--border2); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; }
+  .sync-pill.show { opacity: 1; transform: translate(-50%, 0); }
+  .sync-pill.is-offline { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+  .sync-pill.is-error { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .sync-pill.is-saved { color: var(--teal); }
+
   /* Audience chips + View as */
   .aud-chip { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
   .aud-artist { background: var(--teal-dim); color: var(--teal); }
@@ -891,6 +899,11 @@
         <button class="sched-cancel-btn" onclick="toggleTeamPanel()">Close</button>
       </div>
       <div id="team-list"></div>
+      <div id="removed-wrap" style="display:none">
+        <div class="section-label" style="margin-top:1.25rem">Removed</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.5">These people can't rejoin with old invite links. Allow someone back, then send them a link.</p>
+        <div id="removed-list"></div>
+      </div>
       <div class="section-label" style="margin-top:1.25rem">Invite someone</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Create a link and send it to them. They sign in with Google and land on this artist. Links work for 7 days and can be used by more than one person.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -991,7 +1004,7 @@
   <div class="stat-row">
     <div class="stat"><div class="stat-num" id="s-days-display">—</div><div class="stat-lbl">Days</div></div>
     <div class="stat"><div class="stat-num" id="s-show-display">—</div><div class="stat-lbl">Show date</div></div>
-    <div class="stat"><div class="stat-num" id="s-tasks-display">—</div><div class="stat-lbl">Tasks done</div></div>
+    <div class="stat tm-only"><div class="stat-num" id="s-tasks-display">—</div><div class="stat-lbl">Tasks done</div></div>
     <div class="stat"><div class="stat-num" id="s-contacts-display">—</div><div class="stat-lbl">Contacts</div></div>
   </div>
   <div class="tabs-bar">
@@ -1272,6 +1285,9 @@
   </div>
 </div>
 
+<!-- Save status (Saving… / Offline / Saved) -->
+<div id="sync-pill" class="sync-pill" role="status" aria-live="polite"></div>
+
 <!-- Live-update banner -->
 <button class="remote-banner" id="remote-banner" onclick="applyPendingRemote()"></button>
 
@@ -1333,7 +1349,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.09.30-5';
+const APP_VERSION = '2026.10.02-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1509,6 +1525,7 @@ function sanitizeState(raw) {
     })),
     guests: cleanItems(s.guests, x => ({
       first: str(x.first), last: str(x.last), note: str(x.note),
+      addedBy: SAFE_UUID.test(String(x.addedBy || '')) ? x.addedBy : '',
       tier: pick(x.tier, GUEST_TIERS, 'ga'), status: pick(x.status, GUEST_STATS, 'pending'),
     })),
     flights: cleanItems(s.flights, x => ({
@@ -1738,6 +1755,10 @@ function applyRole(artistId) {
 }
 
 async function logout() {
+  const pending = allDraftKeys();
+  if (pending.length && !confirm(`You have changes on this device that haven't synced yet (${pending.length} show${pending.length === 1 ? '' : 's'}). Signing out will discard them.\n\nSign out anyway?`)) return;
+  pending.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+  stopRetry(); setSync('');
   unsubscribeShow();
   try { await sb.auth.signOut(); } catch {}
   try { window.google?.accounts?.id?.disableAutoSelect(); } catch {}
@@ -1778,21 +1799,29 @@ async function deleteArtistRow(id) {
 }
 
 // ── Shows ──
-// ── Private parts ─────────────────────────────────────────────
-// Items tagged Artist only / Crew only live in show_private, which the
-// database only hands to that group + TMs. In memory everything is one
-// state; split on save, merged on load. PRIVATE_KEYS are the only lists
-// that can be private.
+// ── Show parts ────────────────────────────────────────────────
+// A show is stored in up to four parts:
+//   all    → shows row (name, date, shared state)      everyone on the artist
+//   artist → show_private 'artist'                      artist + TMs
+//   crew   → show_private 'crew'                        crew + TMs
+//   tm     → show_private 'tm' (tasks)                  TMs only
+// In memory it's one merged `state`; split on save, merged on load.
 const PRIVATE_KEYS = ['flights', 'notes', 'contacts'];
+const PARTS = ['all', 'artist', 'crew', 'tm'];
+function dedupeById(list) {
+  const seen = new Set();
+  return list.filter(x => x && !seen.has(x.id) && seen.add(x.id));
+}
 function mergePrivate(s, privRows) {
   for (const pr of privRows || []) {
     const aud = pr.audience;
-    if (aud !== 'artist' && aud !== 'crew') continue;
     const p = sanitizeState(pr.state);
+    if (aud === 'tm') { s.tasks = dedupeById([...s.tasks, ...p.tasks]); continue; }
+    if (aud !== 'artist' && aud !== 'crew') continue;
     for (const [k, items] of Object.entries(p.schedules)) {
-      s.schedules[k] = [...(s.schedules[k] || []), ...items.map(it => ({ ...it, aud }))];
+      s.schedules[k] = dedupeById([...(s.schedules[k] || []), ...items.map(it => ({ ...it, aud }))]);
     }
-    for (const key of PRIVATE_KEYS) s[key] = [...s[key], ...p[key].map(it => ({ ...it, aud }))];
+    for (const key of PRIVATE_KEYS) s[key] = dedupeById([...s[key], ...p[key].map(it => ({ ...it, aud }))]);
   }
   s.notes.sort((a, b) => (b.ts || 0) - (a.ts || 0));
   return s;
@@ -1800,7 +1829,9 @@ function mergePrivate(s, privRows) {
 function splitState(s) {
   const shared = serializeState(s);
   const parts = { artist: { schedules: {}, flights: [], notes: [], contacts: [] },
-                  crew:   { schedules: {}, flights: [], notes: [], contacts: [] } };
+                  crew:   { schedules: {}, flights: [], notes: [], contacts: [] },
+                  tm:     { tasks: shared.tasks || [] } };
+  delete shared.tasks;
   const isShared = it => (it.aud || 'all') === 'all';
   const sched = {};
   for (const [k, items] of Object.entries(shared.schedules || {})) {
@@ -1833,27 +1864,137 @@ function serializeState(s) {
   delete out.id; delete out.artistId;
   return out;
 }
-// What we last read/wrote per show part, so a save only sends what changed.
-const _lastSaved = {};
-function snapshotParts(s) {
+// Stable JSON (sorted keys) so the same data always compares equal.
+function canon(v) {
+  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+function partObjs(s) {
   const { shared, parts } = splitState(s);
+  return JSON.parse(JSON.stringify({
+    all: { name: s.name || '', show_date: s.showDate ? toLocalDateStr(s.showDate) : null, state: shared },
+    artist: parts.artist, crew: parts.crew, tm: parts.tm,
+  }));
+}
+function stateFromParts(meta, parts) {
+  return parseShowRow(
+    { id: meta.id, artist_id: meta.artistId, name: parts.all.name, show_date: parts.all.show_date, state: parts.all.state },
+    ['artist', 'crew', 'tm'].map(a => ({ audience: a, state: parts[a] })));
+}
+function canWritePart(role, part) {
+  if (part === 'all') return !!role;
+  if (part === 'tm') return role === 'tm';
+  return role === 'tm' || role === part;
+}
+
+// ── Three-way merge ───────────────────────────────────────────
+// base = last version we knew the server had, mine = this device,
+// theirs = what the server has now. Everyone's changes survive; if two
+// people edit the SAME item, the person saving now wins for that item.
+function mergeReactions(b, m, t) {
+  b = b || {}; m = m || {}; t = t || {};
+  const out = {};
+  for (const em of new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)])) {
+    const B = new Set(b[em] || []), M = new Set(m[em] || []);
+    const res = new Set(t[em] || []);
+    M.forEach(x => { if (!B.has(x)) res.add(x); });          // I added
+    B.forEach(x => { if (!M.has(x)) res.delete(x); });       // I removed
+    if (res.size) out[em] = [...res];
+  }
+  return out;
+}
+function mergeNote(b, m, t) {
+  const out = { ...t };
+  for (const f of new Set([...Object.keys(b), ...Object.keys(m)])) {
+    if (f === 'replies' || f === 'reactions') continue;
+    if (canon(m[f]) !== canon(b[f])) out[f] = m[f];
+  }
+  out.replies = mergeList(b.replies, m.replies, t.replies, 'list');
+  out.reactions = mergeReactions(b.reactions, m.reactions, t.reactions);
+  return out;
+}
+function mergeList(base, mine, theirs, kind) {
+  base = base || []; mine = mine || []; theirs = theirs || [];
+  const B = new Map(base.map(x => [x.id, x])), M = new Map(mine.map(x => [x.id, x])), T = new Map(theirs.map(x => [x.id, x]));
+  const pick = id => {
+    const b = B.get(id), m = M.get(id), t = T.get(id);
+    if (!b) return m || t;                                    // added (by me or them)
+    if (!m) return (t && canon(t) !== canon(b)) ? t : null;   // I deleted (unless they edited it since)
+    if (!t) return canon(m) !== canon(b) ? m : null;          // they deleted (unless I edited it)
+    if (kind === 'notes') return mergeNote(b, m, t);
+    return canon(m) !== canon(b) ? m : t;
+  };
+  const myNew = mine.filter(x => !B.has(x.id) && !T.has(x.id));
+  const seq = kind === 'notes' ? [...myNew, ...theirs, ...mine] : [...theirs, ...mine];
+  const seen = new Set(), out = [];
+  for (const x of seq) { if (!x || seen.has(x.id)) continue; seen.add(x.id); const v = pick(x.id); if (v) out.push(v); }
+  return out;
+}
+const LIST_KEYS = ['contacts', 'crew', 'notes', 'venues', 'lodging', 'guests', 'flights', 'ros', 'tasks'];
+function mergeObj(b, m, t) {
+  b = b || {}; m = m || {}; t = t || {};
+  const out = {};
+  for (const k of new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)])) {
+    let v;
+    if (k === 'schedules') {
+      v = {};
+      const bs = b[k] || {}, ms = m[k] || {}, ts = t[k] || {};
+      for (const day of new Set([...Object.keys(bs), ...Object.keys(ms), ...Object.keys(ts)])) {
+        const merged = mergeList(bs[day], ms[day], ts[day], 'list');
+        if (merged.length || (day in ms) || (day in ts)) v[day] = merged;
+      }
+    } else if (LIST_KEYS.includes(k)) {
+      v = mergeList(b[k], m[k], t[k], k === 'notes' ? 'notes' : 'list');
+    } else {
+      v = canon(m[k]) !== canon(b[k]) ? m[k] : t[k];
+    }
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+function mergePart(part, b, m, t) {
+  if (part !== 'all') return mergeObj(b, m, t);
+  b = b || {}; m = m || {}; t = t || {};
   return {
-    all: JSON.stringify({ name: s.name, show_date: s.showDate ? toLocalDateStr(s.showDate) : null, state: shared }),
-    artist: JSON.stringify(parts.artist), crew: JSON.stringify(parts.crew),
-    shared, parts,
+    name:      canon(m.name) !== canon(b.name) ? m.name : t.name,
+    show_date: canon(m.show_date) !== canon(b.show_date) ? m.show_date : t.show_date,
+    state:     mergeObj(b.state, m.state, t.state),
   };
 }
-function rememberSaved(showId, s) {
-  const snap = snapshotParts(s);
-  _lastSaved[showId] = { all: snap.all, artist: snap.artist, crew: snap.crew };
-}
+
+// ── Loading ───────────────────────────────────────────────────
+// _base[showId][part] = { rev, str } — the server version this device last saw.
+const _base = {};
 async function fetchPrivate(showIds) {
   if (!showIds.length) return {};
-  const { data, error } = await sb.from('show_private').select('show_id, audience, state').in('show_id', showIds);
+  const { data, error } = await sb.from('show_private').select('show_id, audience, state, rev').in('show_id', showIds);
   if (error) { console.warn('private parts not loaded:', error.message); return {}; }
   const by = {};
   (data || []).forEach(r => { (by[r.show_id] = by[r.show_id] || []).push(r); });
   return by;
+}
+async function fetchShowRaw(showId) {
+  const { data: row, error } = await sb.from('shows').select('*').eq('id', showId).maybeSingle();
+  if (error) throw error;
+  if (!row) return null;
+  const priv = await fetchPrivate([showId]);
+  return { row, priv: priv[showId] || [] };
+}
+function baseFromRaw(raw, parsed) {
+  const objs = partObjs(parsed);
+  const b = {};
+  for (const p of PARTS) {
+    const pr = p === 'all' ? raw.row : raw.priv.find(x => x.audience === p);
+    b[p] = { rev: pr ? (pr.rev ?? 0) : null, str: canon(objs[p]) };
+  }
+  return b;
+}
+function adoptRaw(raw) {
+  const parsed = parseShowRow(raw.row, raw.priv);
+  _showStateCache[raw.row.id] = parsed;
+  _base[raw.row.id] = baseFromRaw(raw, parsed);
+  return parsed;
 }
 // Light show list for an artist. Also warms the full-state cache.
 async function getShows(artistId) {
@@ -1862,7 +2003,7 @@ async function getShows(artistId) {
     const rows = must(await sb.from('shows').select('*').eq('artist_id', artistId)
       .order('show_date', { ascending: true, nullsFirst: false }), 'Load shows');
     const priv = await fetchPrivate(rows.map(r => r.id));
-    rows.forEach(r => { const st = parseShowRow(r, priv[r.id]); _showStateCache[r.id] = st; rememberSaved(r.id, st); });
+    rows.forEach(r => { if (!hasDraft(r.id)) adoptRaw({ row: r, priv: priv[r.id] || [] }); });
     _showsCache[artistId] = rows.map(r => ({ id: r.id, name: r.name, showDate: r.show_date }));
     return _showsCache[artistId];
   } catch (e) { console.error(e); return []; }
@@ -1870,72 +2011,203 @@ async function getShows(artistId) {
 // `force` skips the cache and re-reads from the database.
 async function getShowState(showId, force) {
   if (!force && _showStateCache[showId]) return _showStateCache[showId];
-  const { data, error } = await sb.from('shows').select('*').eq('id', showId).maybeSingle();
-  if (error) { console.error('getShowState failed:', error); throw error; }
-  if (!data) return null;
-  const priv = await fetchPrivate([showId]);
-  const s = parseShowRow(data, priv[showId]);
-  _showStateCache[showId] = s;
-  rememberSaved(showId, s);
-  return s;
+  const raw = await fetchShowRaw(showId);
+  if (!raw) return null;
+  const parsed = adoptRaw(raw);
+  // Changes made on this device that never reached the server (offline)
+  const d = readDraft(showId);
+  if (d && d.parts && d.base) {
+    const restored = stateFromParts(parsed, d.parts);
+    _base[showId] = d.base;                     // their old base → the save merges with anything newer
+    _showStateCache[showId] = restored;
+    return restored;
+  }
+  return parsed;
 }
 async function insertShow(artistId, id, s) {
   _showsCache[artistId] = null;
   s.id = id; s.artistId = artistId;
-  const snap = snapshotParts(s);
-  must(await sb.from('shows').insert({
-    id, artist_id: artistId, name: s.name,
-    show_date: s.showDate ? toLocalDateStr(s.showDate) : null,
-    state: snap.shared,
-  }), 'Create show');
-  for (const aud of ['artist', 'crew']) {
-    const part = snap.parts[aud];
-    if (Object.keys(part.schedules).length || PRIVATE_KEYS.some(k => part[k].length)) {
-      must(await sb.from('show_private').upsert({ show_id: id, audience: aud, state: part }, { onConflict: 'show_id,audience' }), 'Save private part');
-    }
+  const parts = partObjs(s);
+  must(await sb.from('shows').insert({ id, artist_id: artistId, name: parts.all.name, show_date: parts.all.show_date, state: parts.all.state }), 'Create show');
+  for (const aud of ['artist', 'crew', 'tm']) {
+    const part = parts[aud];
+    const empty = canon(part) === canon(partObjs({ name: '', days: [], schedules: {}, notes: [], flights: [], contacts: [], tasks: [] })[aud]);
+    if (!empty) must(await sb.from('show_private').insert({ show_id: id, audience: aud, state: part }), 'Save private part');
   }
-  _showStateCache[id] = s;
-  rememberSaved(id, s);
+  const raw = await fetchShowRaw(id);
+  if (raw) adoptRaw(raw); else _showStateCache[id] = s;
+}
+
+// ── Saving (conflict-safe) ────────────────────────────────────
+class ConflictError extends Error {}
+function isNetworkError(e) {
+  const msg = String((e && (e.message || e.details)) || e || '');
+  return (typeof navigator !== 'undefined' && navigator.onLine === false)
+    || e instanceof TypeError || /failed to fetch|networkerror|load failed|network request failed|fetch failed|timeout/i.test(msg);
+}
+async function writePart(showId, artistId, part, obj, rev) {
+  let res;
+  if (part === 'all') {
+    res = await sb.from('shows').update({ name: obj.name, show_date: obj.show_date, state: obj.state })
+      .eq('id', showId).eq('rev', rev).select('id, artist_id, name, show_date, state, rev');
+  } else if (rev == null) {
+    res = await sb.from('show_private').insert({ show_id: showId, audience: part, state: obj }).select('audience, state, rev');
+    if (res.error && (res.error.code === '23505' || /duplicate key/i.test(res.error.message))) throw new ConflictError();
+  } else {
+    res = await sb.from('show_private').update({ state: obj })
+      .eq('show_id', showId).eq('audience', part).eq('rev', rev).select('audience, state, rev');
+  }
+  if (res.error) throw res.error;
+  const row = Array.isArray(res.data) ? res.data[0] : res.data;
+  if (!row) throw new ConflictError();                    // someone saved first (or the show was deleted)
+  return row;
+}
+// The server's normalized view of one part, from the row a write returned.
+function partFromRow(part, row, meta) {
+  const parsed = part === 'all'
+    ? parseShowRow(row, [])
+    : parseShowRow({ id: meta.id, artist_id: meta.artistId, name: '', show_date: null, state: {} }, [{ audience: part, state: row.state }]);
+  return partObjs(parsed)[part];
 }
 async function saveShowState(showId, s) {
-  _showStateCache[showId] = s;
-  const snap = snapshotParts(s);
-  const last = _lastSaved[showId] || {};
-  const role = myRoles[s.artistId];
-  const showDateStr = s.showDate ? toLocalDateStr(s.showDate) : null;
-  try {
-    if (snap.all !== last.all) {
-      const { error } = await sb.from('shows').update({ name: s.name, show_date: showDateStr, state: snap.shared }).eq('id', showId);
-      if (error) throw error;
+  let cur = s;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const base = _base[showId] || (_base[showId] = {});
+    const mine = partObjs(cur);
+    const role = myRoles[cur.artistId];
+    const adopted = {};
+    let conflict = false;
+    for (const p of PARTS) {
+      if (!canWritePart(role, p)) continue;
+      const mineStr = canon(mine[p]);
+      const b = base[p] || { rev: null, str: canon(partObjs({ name: '', days: [], schedules: {}, notes: [], flights: [], contacts: [], tasks: [] })[p]) };
+      if (b.str === mineStr) continue;
+      if (p === 'all' && b.rev == null) { conflict = true; break; }
+      try {
+        const row = await writePart(showId, cur.artistId, p, mine[p], b.rev);
+        const server = partFromRow(p, row, cur);
+        base[p] = { rev: row.rev ?? 0, str: canon(server) };
+        if (canon(server) !== mineStr) adopted[p] = server;  // the server applied its rules (e.g. member limits)
+      } catch (e) {
+        if (e instanceof ConflictError) { conflict = true; break; }
+        throw e;
+      }
     }
-    for (const aud of ['artist', 'crew']) {
-      if (role !== 'tm' && role !== aud) continue;          // never write a part you can't see
-      if (snap[aud] === last[aud]) continue;
-      const { error } = await sb.from('show_private').upsert({ show_id: showId, audience: aud, state: snap.parts[aud] }, { onConflict: 'show_id,audience' });
-      if (error) throw error;
+    if (!conflict) {
+      if (Object.keys(adopted).length) { cur = stateFromParts(cur, { ...mine, ...adopted }); onMerged(showId, cur, false); }
+      clearDraft(showId);
+      const list = cur.artistId && _showsCache[cur.artistId];
+      if (list) { const m = list.find(x => x.id === showId); if (m) { m.name = cur.name; m.showDate = cur.showDate ? toLocalDateStr(cur.showDate) : null; } }
+      return cur;
     }
-  } catch (error) {
-    console.error('saveShowState FAILED:', error);
-    alert('Could not save changes: ' + (error.message || error) + '\n\nYour change may be lost on refresh. Check your connection.');
-    throw error;
+    // Someone saved first: pull their version, merge ours on top, try again.
+    const raw = await fetchShowRaw(showId);
+    if (!raw) throw new Error('This show was deleted by someone else.');
+    const theirsState = parseShowRow(raw.row, raw.priv);
+    const theirs = partObjs(theirsState);
+    const merged = {};
+    for (const p of PARTS) {
+      const b = base[p] ? JSON.parse(base[p].str) : null;
+      merged[p] = canWritePart(role, p) ? mergePart(p, b, mine[p], theirs[p]) : theirs[p];
+    }
+    _base[showId] = baseFromRaw(raw, theirsState);
+    cur = stateFromParts(cur, merged);
+    onMerged(showId, cur, true);
   }
-  _lastSaved[showId] = { all: snap.all, artist: snap.artist, crew: snap.crew };
-  const list = s.artistId && _showsCache[s.artistId];
-  if (list) { const m = list.find(x => x.id === showId); if (m) { m.name = s.name; m.showDate = showDateStr; } }
+  throw new Error('Someone else keeps editing this show at the same time. Your changes are kept on this device — try again in a moment.');
+}
+// A save merged in someone else's changes: show them.
+function onMerged(showId, merged, fromTeam) {
+  _showStateCache[showId] = merged;
+  if (showId !== currentShowId) return;
+  state = merged;
+  if (isUserEditing()) showRemoteBanner();
+  else applyRemoteState(merged);
+  if (fromTeam) setSync('merged');
 }
 async function deleteShowRow(artistId, showId) {
   _showsCache[artistId] = null;
   delete _showStateCache[showId];
+  delete _base[showId];
+  clearDraft(showId);
   must(await sb.from('shows').delete().eq('id', showId), 'Delete show');
 }
-// Saves are queued so they always land in the order they were made.
+
+// ── Offline drafts ────────────────────────────────────────────
+// Every change is written to this device first, then sent. If the send
+// fails (no signal), the draft stays here and is retried automatically.
+function draftKey(id) { return `offstage-draft-${myUid}-${id}`; }
+function writeDraft(id, s) {
+  try { localStorage.setItem(draftKey(id), JSON.stringify({ at: Date.now(), parts: partObjs(s), base: _base[id] || null })); } catch {}
+}
+function readDraft(id) {
+  try { const d = JSON.parse(localStorage.getItem(draftKey(id)) || 'null'); return d && d.parts ? d : null; } catch { return null; }
+}
+function hasDraft(id) { return !!readDraft(id); }
+function clearDraft(id) { try { localStorage.removeItem(draftKey(id)); } catch {} }
+function allDraftKeys() {
+  const out = [];
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(`offstage-draft-${myUid}-`)) out.push(k); } } catch {}
+  return out;
+}
+
+// ── Save queue + status ───────────────────────────────────────
 let _saveChain = Promise.resolve();
+let _retryTimer = null;
+let _lastAlert = { msg: '', at: 0 };
 function saveState() {
   if (!currentShowId || !state) return Promise.resolve();
   try { renderRail(); } catch (e) { /* rail is cosmetic */ }
-  const id = currentShowId, snapshot = state;
-  _saveChain = _saveChain.catch(() => {}).then(() => saveShowState(id, snapshot));
+  const id = currentShowId;
+  writeDraft(id, state);
+  _saveChain = _saveChain.catch(() => {}).then(() => flushSave(id));
   return _saveChain;
+}
+async function flushSave(id) {
+  const s = id === currentShowId ? state : _showStateCache[id];
+  if (!s) return;
+  setSync('saving');
+  try {
+    await saveShowState(id, s);
+    setSync('saved');
+    if (!allDraftKeys().length) stopRetry();
+  } catch (e) {
+    console.error('save failed:', e);
+    if (id === currentShowId && state) writeDraft(id, state);
+    if (isNetworkError(e)) { setSync('offline'); startRetry(); return; }
+    setSync('error');
+    const msg = e.message || String(e);
+    if (msg !== _lastAlert.msg || Date.now() - _lastAlert.at > 15000) {
+      _lastAlert = { msg, at: Date.now() };
+      alert('Could not save: ' + msg + '\n\nYour change is kept on this device and will be retried.');
+    }
+    startRetry();
+  }
+}
+function startRetry() {
+  if (_retryTimer) return;
+  _retryTimer = setInterval(() => {
+    if (navigator.onLine === false) return;
+    if (currentShowId && hasDraft(currentShowId)) saveState();
+  }, 15000);
+}
+function stopRetry() { clearInterval(_retryTimer); _retryTimer = null; }
+
+let _syncTimer = null;
+function setSync(kind) {
+  const el = document.getElementById('sync-pill');
+  if (!el) return;
+  clearTimeout(_syncTimer);
+  const show = (text, cls, ms) => {
+    el.textContent = text; el.className = 'sync-pill show ' + cls;
+    if (ms) _syncTimer = setTimeout(() => { el.className = 'sync-pill'; }, ms);
+  };
+  if (kind === 'saving') { _syncTimer = setTimeout(() => show('Saving…', 'is-saving'), 700); return; }
+  if (kind === 'saved') { if (el.classList.contains('show')) show('Saved', 'is-saved', 1200); return; }
+  if (kind === 'merged') return show("Merged your team's latest changes", 'is-saved', 2500);
+  if (kind === 'offline') return show('Offline — changes saved on this device', 'is-offline');
+  if (kind === 'error') return show("Couldn't save — retrying", 'is-error');
+  el.className = 'sync-pill';
 }
 
 // ── Rider ──
@@ -1966,25 +2238,62 @@ let _pendingRemote = null;
 
 function subscribeShow(showId) {
   unsubscribeShow();
+  let joined = false;
   const onChange = payload => {
     const row = payload.new || {};
-    if (row.updated_by && row.updated_by === myUid) return;   // our own save echoing back
-    clearTimeout(_remoteTimer);
-    _remoteTimer = setTimeout(async () => {                    // coalesce bursts, then re-read both parts
-      if (currentShowId !== showId) return;
-      let fresh;
-      try { fresh = await getShowState(showId, true); } catch { return; }
-      if (!fresh || currentShowId !== showId) return;
-      if (isUserEditing()) { showRemoteBanner(fresh, nameFor(row.updated_by)); return; }
-      applyRemoteState(fresh);
-    }, 250);
+    const part = payload.table === 'shows' ? 'all' : row.audience;
+    const b = _base[showId] && _base[showId][part];
+    if (part && row.rev != null && b && b.rev != null && b.rev >= row.rev) return;   // we already have this version
+    scheduleRefresh(showId);
   };
   _showChannel = sb.channel('show-' + showId)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shows', filter: `id=eq.${showId}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'show_private', filter: `show_id=eq.${showId}` }, onChange)
-    .subscribe();
+    .subscribe(status => {
+      if (status !== 'SUBSCRIBED') return;
+      if (joined) scheduleRefresh(showId);         // reconnected: catch up on anything missed
+      joined = true;
+    });
 }
 let _remoteTimer = null;
+function scheduleRefresh(showId) {
+  clearTimeout(_remoteTimer);
+  _remoteTimer = setTimeout(() => refreshShow(showId), 250);
+}
+// Pull the latest from the server and merge it with anything on this device.
+async function refreshShow(showId) {
+  if (!showId || currentShowId !== showId) return;
+  await _saveChain.catch(() => {});
+  if (hasDraft(showId)) { saveState(); return; }   // unsent local changes go first; the save merges
+  let raw;
+  try { raw = await fetchShowRaw(showId); } catch { return; }
+  if (!raw || currentShowId !== showId) return;
+  const theirsState = parseShowRow(raw.row, raw.priv);
+  const theirs = partObjs(theirsState), mine = partObjs(state);
+  const merged = {};
+  for (const p of PARTS) {
+    const b = _base[showId] && _base[showId][p] ? JSON.parse(_base[showId][p].str) : null;
+    merged[p] = mergePart(p, b, mine[p], theirs[p]);
+  }
+  _base[showId] = baseFromRaw(raw, theirsState);
+  if (canon(merged) === canon(mine)) return;        // nothing new
+  const next = stateFromParts(state, merged);
+  _showStateCache[showId] = next;
+  state = next;
+  if (isUserEditing()) showRemoteBanner();
+  else applyRemoteState(next);
+  if (canon(merged) !== canon(theirs)) saveState();  // we still have local edits to send
+}
+// Phones drop the live connection in the background: catch up on wake / signal.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !currentShowId) return;
+  if (document.getElementById('app')?.style.display !== 'block') return;
+  scheduleRefresh(currentShowId);
+});
+window.addEventListener('online', () => {
+  if (currentShowId && hasDraft(currentShowId)) saveState();
+  else if (currentShowId) scheduleRefresh(currentShowId);
+});
 function unsubscribeShow() {
   if (_showChannel) { try { sb.removeChannel(_showChannel); } catch {} }
   _showChannel = null;
@@ -2017,10 +2326,10 @@ function applyRemoteState(fresh) {
   _pendingRemote = null;
   hideRemoteBanner();
 }
-function showRemoteBanner(fresh, who) {
-  _pendingRemote = fresh;
+function showRemoteBanner() {
+  _pendingRemote = true;
   const b = document.getElementById('remote-banner');
-  b.textContent = `↻ ${who} updated this show — tap to refresh`;
+  b.textContent = '↻ Your team updated this show — tap to refresh';
   b.style.display = 'block';
 }
 function hideRemoteBanner() {
@@ -2028,7 +2337,7 @@ function hideRemoteBanner() {
   if (b) b.style.display = 'none';
 }
 function applyPendingRemote() {
-  if (_pendingRemote && _pendingRemote.id === currentShowId) applyRemoteState(_pendingRemote);
+  if (_pendingRemote && state) applyRemoteState(state);
   _pendingRemote = null;
   hideRemoteBanner();
 }
@@ -2477,12 +2786,36 @@ async function renderTeam() {
       ${isMe || isOwner ? '' : `<button class="contact-del" onclick="removeMember('${esc(m.user_id)}')" title="Remove from team">×</button>`}
     </div>`;
   }).join('');
+  await renderRemoved();
   await renderInvites();
+}
+
+async function renderRemoved() {
+  const wrap = document.getElementById('removed-wrap');
+  const list = document.getElementById('removed-list');
+  const { data, error } = await sb.from('artist_removals').select('user_id, name, email, removed_at')
+    .eq('artist_id', currentArtistId).order('removed_at', { ascending: false });
+  if (error || !data || !data.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = data.filter(r => SAFE_UUID.test(r.user_id)).map(r => `<div class="team-row">
+      <div class="team-body">
+        <div class="team-name">${esc(r.name || 'Removed person')}</div>
+        <div class="team-email">${esc(r.email || '')} · removed ${esc(fmtDateSimple(new Date(r.removed_at)))}</div>
+      </div>
+      <button class="pill-btn" onclick="allowBack('${esc(r.user_id)}')">Allow back</button>
+    </div>`).join('');
+}
+
+async function allowBack(userId) {
+  try {
+    must(await sb.from('artist_removals').delete().eq('artist_id', currentArtistId).eq('user_id', userId), 'Allow back');
+  } catch (e) { alert(e.message); return; }
+  await renderRemoved();
 }
 
 async function removeMember(userId) {
   const name = nameFor(userId);
-  if (!confirm(`Remove ${name} from this artist? They lose access right away.`)) return;
+  if (!confirm(`Remove ${name} from this artist? They lose access right away and can't rejoin with old invite links unless you allow them back.`)) return;
   try {
     must(await sb.from('artist_members').delete().eq('artist_id', currentArtistId).eq('user_id', userId), 'Remove member');
   } catch (e) { alert(e.message); return; }
@@ -2654,7 +2987,7 @@ async function submitEditShow(showId) {
   if (showV) saved.showDate = parseLocalDate(showV);
   else if (showV === '') saved.showDate = null;
 
-  try { await saveShowState(showId, saved); } catch { return; }
+  try { await saveShowState(showId, saved); } catch (e) { alert('Could not save: ' + (e.message || e)); return; }
   _showsCache[currentArtistId] = null;
   hideEditShowForm(showId);
   await renderArtistScreen(currentArtistId);
@@ -2733,12 +3066,19 @@ async function deleteCurrentShow() {
 }
 
 async function openShow(showId) {
-  let saved;
+  let saved, offline = false;
   try {
     saved = await getShowState(showId, true);
   } catch (e) {
-    alert('Could not load show data: ' + (e.message || e));
-    return;
+    const cached = _showStateCache[showId];
+    const d = readDraft(showId);
+    if (isNetworkError(e) && cached) {
+      saved = d ? stateFromParts(cached, d.parts) : cached;   // no signal: open what this device has
+      offline = true;
+    } else {
+      alert('Could not load show data: ' + (e.message || e));
+      return;
+    }
   }
   if (!saved) {
     alert('This show could not be found. It may have been deleted, or you may no longer have access.');
@@ -2758,6 +3098,8 @@ async function openShow(showId) {
   buildApp();
   showScreen('app');
   subscribeShow(showId);
+  if (offline) setSync('offline');
+  if (hasDraft(showId)) { saveState(); startRetry(); }
 }
 
 // ════════════════════════════════
@@ -2861,7 +3203,7 @@ function histSummary(st, audience) {
   if (!audience || audience === 'all') bits.splice(2, 0, `${s.guests.length} guests`);
   return bits.join(' · ');
 }
-const AUD_PART_LABEL = { all: 'Shared', artist: 'Artist-only items', crew: 'Crew-only items' };
+const AUD_PART_LABEL = { all: 'Shared', artist: 'Artist-only items', crew: 'Crew-only items', tm: 'Tasks (TM only)' };
 function fmtWhen(iso) {
   const d = new Date(iso);
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -2888,7 +3230,7 @@ async function openHistory() {
   list.innerHTML = _histRows.map((r, i) => `
     <div class="hist-row">
       <div class="hist-main">
-        <span class="hist-when">${esc(fmtWhen(r.changed_at))}${(r.audience && r.audience !== 'all') ? `<span class="aud-chip aud-${r.audience}">${r.audience === 'artist' ? 'ARTIST ONLY' : 'CREW ONLY'}</span>` : ''}</span>
+        <span class="hist-when">${esc(fmtWhen(r.changed_at))}${(r.audience && r.audience !== 'all') ? `<span class="aud-chip aud-${r.audience === 'tm' ? 'crew' : r.audience}">${r.audience === 'artist' ? 'ARTIST ONLY' : r.audience === 'crew' ? 'CREW ONLY' : 'TASKS'}</span>` : ''}</span>
         <span class="hist-what">${esc(AUD_PART_LABEL[r.audience || 'all'])} · before ${esc(nameFor(r.changed_by))}'s change · ${esc(histSummary(r.state, r.audience))}</span>
       </div>
       <button class="pill-btn" onclick="restoreVersion(${i})">Restore</button>
@@ -2904,13 +3246,13 @@ async function restoreVersion(i) {
   const sharedRow = part === 'all'
     ? { id: currentShowId, artist_id: state.artistId, name: r.name, show_date: r.show_date, state: r.state }
     : { id: currentShowId, artist_id: state.artistId, name: state.name, show_date: state.showDate ? toLocalDateStr(state.showDate) : null, state: cur.shared };
-  const priv = ['artist', 'crew'].map(a => ({ audience: a, state: (part === a) ? r.state : cur.parts[a] }));
+  const priv = ['artist', 'crew', 'tm'].map(a => ({ audience: a, state: (part === a) ? r.state : cur.parts[a] }));
   const restored = parseShowRow(sharedRow, priv);
   state = restored;
-  try { await saveShowState(currentShowId, restored); } catch { return; }
   _showsCache[currentArtistId] = null;
   closeHistory();
   buildApp();
+  await saveState();
 }
 
 async function openDeletedShows() {
@@ -2943,7 +3285,7 @@ async function restoreDeletedShow(i) {
     must(await sb.from('shows').insert({ id: r.show_id, artist_id: currentArtistId, name: r.name || 'Restored show', show_date: r.show_date, state: r.state || {} }), 'Restore show');
     // bring back its artist-only / crew-only parts too
     const { data: parts } = await sb.from('show_history').select('id, audience, state')
-      .eq('show_id', r.show_id).eq('action', 'delete').in('audience', ['artist', 'crew']).order('id', { ascending: false });
+      .eq('show_id', r.show_id).eq('action', 'delete').in('audience', ['artist', 'crew', 'tm']).order('id', { ascending: false });
     const done = new Set();
     for (const pr of parts || []) {
       if (done.has(pr.audience)) continue;
@@ -4026,6 +4368,12 @@ function saveNote() {
   saveState();
 }
 
+// Members can change their own notes/guests; TMs can change anything.
+function canEditItem(ownerId, ownerEmail) {
+  if (myRoles[currentArtistId] === 'tm') return true;
+  if (ownerId) return ownerId === myUid;
+  return !!ownerEmail && ownerEmail.toLowerCase() === myEmail;
+}
 function isMine(item) {
   if (item.authorId) return item.authorId === myUid;
   return (item.authorEmail || '').toLowerCase() === myEmail;
@@ -4059,8 +4407,8 @@ function renderNotes() {
       <div class="note-body">${esc(n.txt)}</div>
       ${noteReactionsHTML(n)}
       <div class="note-reply-action"><button class="note-reply-btn" onclick="startReply('${n.id}')">↳ Reply</button></div>
-      <button class="sched-edit-btn" onclick="editNote('${n.id}')" style="position:absolute;top:10px;right:22px" title="Edit">✏</button>
-      <button class="note-del" onclick="deleteNote('${n.id}')">×</button>
+      ${canEditItem(n.authorId, n.authorEmail) ? `<button class="sched-edit-btn" onclick="editNote('${n.id}')" style="position:absolute;top:10px;right:22px" aria-label="Edit note">✏</button>
+      <button class="note-del" onclick="deleteNote('${n.id}')" aria-label="Delete note">×</button>` : ''}
       ${replies ? `<div class="note-replies">${replies}</div>` : ''}
     </div>`;
   }).join('');
@@ -4179,7 +4527,8 @@ function deleteReply(parentId, replyId) {
 // GUEST LIST
 // ════════════════════════════════
 function csvCell(v) {
-  const s = (v == null ? '' : String(v));
+  let s = (v == null ? '' : String(v));
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;      // stop Excel/Sheets running it as a formula
   if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
@@ -4295,7 +4644,7 @@ function renderGuestList() {
         ${g.note ? `<span class="gl-sub">${esc(g.note)}</span>` : ''}
       </div>
       <span class="gl-status st-${g.status}">${esc(g.status)}</span>
-      <div class="gl-actions">
+      <div class="gl-actions${canEditItem(g.addedBy) ? ' mine' : ''}">
         <button class="gl-edit-btn" onclick="editGuest('${g.id}')" aria-label="Edit guest">✏</button>
         <button class="gl-del-btn" onclick="deleteGuest('${g.id}')" aria-label="Remove guest">×</button>
       </div>
@@ -4323,7 +4672,7 @@ function addGuest() {
   const note   = document.getElementById('gl-note')?.value.trim();
   if (!first && !last) return;
   if (!state.guests) state.guests = [];
-  state.guests.push({ id: uid(), first: first||'', last: last||'', tier, status, note: note||'' });
+  state.guests.push({ id: uid(), first: first||'', last: last||'', tier, status, note: note||'', addedBy: myUid });
   renderGuestList();
   ['gl-first','gl-last','gl-note'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('gl-first')?.focus();
@@ -4788,7 +5137,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, setViewAs, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, allowBack, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
