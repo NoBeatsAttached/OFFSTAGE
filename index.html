@@ -55,6 +55,10 @@
   .readonly .danger-zone { display: none !important; }
   .not-owner .owner-only { display: none !important; }
   .no-create #btn-new-artist, .no-create #new-artist-form { display: none !important; }
+  body:not(.no-create) .create-only-hidden { display: none !important; }
+  .own-team { margin-top: 1.5rem; padding: 16px; border: 1px dashed var(--border2); border-radius: 14px; }
+  .own-team-q { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .own-team-sub { font-size: 13px; color: var(--muted); margin-bottom: 6px; line-height: 1.5; }
   .topbar-logo { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--accent-ink); text-transform: uppercase; white-space: nowrap; }
   .topbar-back { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; padding: 4px 6px; white-space: nowrap; transition: color .15s; }
   .topbar-back:hover { color: var(--accent-ink); }
@@ -827,6 +831,7 @@
     <div class="menu-wrap">
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
+        <button class="create-only-hidden" onclick="startOwnTeam()">Start your own team</button>
         <button onclick="downloadBackup(this)">Download backup</button>
         <button onclick="sendFeedback()">Feedback</button>
         <button onclick="logout()">Sign out</button>
@@ -851,6 +856,11 @@
       </div>
     </div>
     <button class="btn-new" id="btn-new-artist" onclick="showNewArtistForm()">+ Add an artist</button>
+    <div class="own-team create-only-hidden">
+      <div class="own-team-q">Are you a tour manager?</div>
+      <div class="own-team-sub">Run your own artists and crew. Your access here doesn't change.</div>
+      <button class="link-btn" onclick="startOwnTeam()">Start your own team →</button>
+    </div>
   </div>
 </div>
 
@@ -875,6 +885,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button class="tm-only" onclick="showEditArtistForm()">Edit artist</button>
+        <button class="create-only-hidden" onclick="startOwnTeam()">Start your own team</button>
         <button onclick="sendFeedback()">Feedback</button>
         <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
         <button onclick="logout()">Sign out</button>
@@ -1376,7 +1387,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.02-4';
+const APP_VERSION = '2026.10.02-6';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1753,9 +1764,10 @@ async function handleAuthSuccess(user) {
 
   if (joinedArtistId) { await openArtist(joinedArtistId); return; }
 
-  // Artist/crew on exactly one artist and not a TM anywhere → straight to it.
+  // Crew/artist-only account on exactly one artist → straight to it.
+  // (Accounts that can run their own artists always land on their roster.)
   const ids = Object.keys(myRoles);
-  if (ids.length === 1 && myRoles[ids[0]] !== 'tm') { await openArtist(ids[0]); return; }
+  if (ids.length === 1 && myRoles[ids[0]] !== 'tm' && !canCreateArtists()) { await openArtist(ids[0]); return; }
   await goHome();
 }
 
@@ -1768,6 +1780,17 @@ async function loadMyRoles() {
 // Crew/artist accounts (joined by invite) can't create artists — the database
 // enforces it; this just hides the controls.
 function canCreateArtists() { return !myProfile || myProfile.can_create_artists !== false; }
+async function startOwnTeam() {
+  closeMenus();
+  if (!confirm("Start your own team?\n\nYou'll be able to add your own artists and invite your own crew. Your access on the teams you're already on doesn't change.")) return;
+  const { error } = await sb.rpc('become_tm');
+  if (error) { alert('Could not start your team: ' + error.message); return; }
+  const { data } = await sb.from('profiles').select('*').eq('id', myUid).maybeSingle();
+  if (data) { myProfile = data; profilesById[myUid] = data; }
+  applyAccountType();
+  await goHome();
+  showNewArtistForm();
+}
 function applyAccountType() { document.body.classList.toggle('no-create', !canCreateArtists()); }
 
 // Toggle read-only UI for the artist being viewed.
@@ -2674,7 +2697,7 @@ async function renderHome() {
   if (!artists.length) {
     list.innerHTML = canCreateArtists()
       ? '<div class="empty-state">No artists yet. Add one below — you\'ll be its TM.</div>'
-      : '<div class="empty-state">You\'re not on a team yet. Ask your tour manager for an invite link.</div>';
+      : '<div class="empty-state">You\'re not on a team yet. Ask your tour manager for an invite link, or start your own team below.</div>';
     return;
   }
   const rows = await Promise.all(artists.map(async (a, i) => {
@@ -5192,7 +5215,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, setViewAs, allowBack, sendFeedback, closeFeedback, copyFeedbackEmail, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, allowBack, startOwnTeam, sendFeedback, closeFeedback, copyFeedbackEmail, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
