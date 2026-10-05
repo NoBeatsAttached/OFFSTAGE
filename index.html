@@ -745,6 +745,20 @@
     .app-rail { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: 340px; box-sizing: border-box; padding: 24px 20px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; z-index: 150; }
   }
 
+  /* Date fields: stop iPhone from sizing them wider than their box */
+  input[type="date"] { -webkit-appearance: none; appearance: none; display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 48px; box-sizing: border-box; }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  /* Run picker */
+  .run-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 14px 12px; margin-bottom: 1.25rem; }
+  .run-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .run-unit { font-weight: 400; color: var(--muted); }
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+  .stepper button { width: 44px; height: 44px; border: none; background: var(--surface2); color: var(--text); font-size: 20px; cursor: pointer; }
+  .stepper button:active { background: var(--surface3); }
+  .stepper output { min-width: 40px; text-align: center; font-family: var(--mono); font-size: 16px; }
+  .run-preview { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--accent-ink); margin-top: 12px; }
+  .show-edit-form .run-box { margin-bottom: 10px; }
+
   /* Feedback */
   .fb-email { font-family: var(--mono); font-size: 16px; color: var(--text); background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px; margin: 4px 0 14px; text-align: center; user-select: all; word-break: break-all; }
   .fb-open { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; text-decoration: none; }
@@ -949,35 +963,14 @@
 <div id="setup-screen">
   <div class="setup-box">
     <button class="topbar-back" onclick="setupBack()" style="margin-bottom:1rem;padding:0">← Back</button>
-    <h1 class="setup-title">New Show</h1>
-    <p class="setup-sub">Fill in the details. Show day will auto-populate with a default schedule and task checklist.</p>
+    <h1 class="setup-title">New show</h1>
+    <p class="setup-sub" id="s-for">Show day starts with a standard schedule and checklist.</p>
     <div class="field-group">
-      <label class="field-label">Show / Tour name</label>
-      <input type="text" id="s-name" placeholder="e.g. G-REX — Denver Run">
+      <label class="field-label" for="s-name">Show name</label>
+      <input type="text" id="s-name" placeholder="e.g. Denver Run">
     </div>
-    <div class="field-group">
-      <label class="field-label">Artist</label>
-      <input type="text" id="s-artist" placeholder="e.g. G-REX">
-    </div>
-    <div class="row-2">
-      <div class="field-group">
-        <label class="field-label">Start date</label>
-        <input type="date" id="s-start">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Number of days</label>
-        <input type="number" id="s-days" min="1" max="30" value="3">
-      </div>
-    </div>
-    <div class="field-group">
-      <label class="field-label">Show day</label>
-      <input type="date" id="s-show">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Your name (TM)</label>
-      <input type="text" id="s-tm" placeholder="e.g. Isaiah">
-    </div>
-    <button class="btn-primary" onclick="launch()">Build Dashboard →</button>
+    <div id="s-run"></div>
+    <button class="btn-primary" onclick="launch()">Create show →</button>
   </div>
 </div>
 
@@ -1387,7 +1380,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.02-6';
+const APP_VERSION = '2026.10.05-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -2986,10 +2979,8 @@ async function renderArtistScreen(artistId) {
       <div class="show-edit-form" id="sef-${s.id}">
         <div class="sef-grid">
           <input id="sef-name-${s.id}" type="text" placeholder="Show name" value="${esc(s.name)}" class="sef-span2">
-          <input id="sef-start-${s.id}" type="date" placeholder="Start date">
-          <input id="sef-days-${s.id}" type="number" min="1" max="30" placeholder="# days">
-          <input id="sef-show-${s.id}" type="date" placeholder="Show day">
         </div>
+        <div id="sef-run-${s.id}"></div>
         <div class="sef-actions">
           <button class="btn-primary" onclick="submitEditShow('${s.id}')">Save →</button>
           <button class="btn-sm" onclick="hideEditShowForm('${s.id}')">Cancel</button>
@@ -3012,15 +3003,22 @@ async function showEditShowForm(showId) {
   const form = document.getElementById('sef-' + showId);
   if (!form) return;
   const saved = await getShowState(showId);
+  const prefix = 'sef-' + showId;
+  let showStr = '', before = 0, after = 0;
   if (saved) {
-    if (saved.days && saved.days.length) {
-      document.getElementById('sef-start-' + showId).value = toLocalDateStr(saved.days[0]);
-    }
-    document.getElementById('sef-days-' + showId).value = saved.days && saved.days.length ? saved.days.length : 1;
-    if (saved.showDate) {
-      document.getElementById('sef-show-' + showId).value = toLocalDateStr(saved.showDate);
+    const days = saved.days || [];
+    const anchor = saved.showDate || days[0] || null;
+    if (anchor) {
+      showStr = toLocalDateStr(anchor);
+      const dayDiff = (a, b) => Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(b.getFullYear(), b.getMonth(), b.getDate())) / 86400000);
+      if (days.length) {
+        before = Math.max(0, Math.min(RUN_MAX, dayDiff(anchor, days[0])));
+        after = Math.max(0, Math.min(RUN_MAX, dayDiff(days[days.length - 1], anchor)));
+      }
     }
   }
+  document.getElementById('sef-run-' + showId).innerHTML = runPickerHTML(prefix, showStr, before, after);
+  updateRunPreview(prefix);
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 }
 
@@ -3030,34 +3028,26 @@ function hideEditShowForm(showId) {
 }
 
 async function submitEditShow(showId) {
-  const name    = document.getElementById('sef-name-' + showId)?.value.trim();
-  const startV  = document.getElementById('sef-start-' + showId)?.value;
-  const daysN   = parseInt(document.getElementById('sef-days-' + showId)?.value) || 1;
-  const showV   = document.getElementById('sef-show-' + showId)?.value;
+  const name = document.getElementById('sef-name-' + showId)?.value.trim();
+  const { showDate, days: newDays } = readRun('sef-' + showId);
   if (!name) { alert('Show name is required.'); return; }
+  if (!showDate) { alert('Pick a show date.'); return; }
 
   const saved = await getShowState(showId, true);
   if (!saved) return;
 
+  // Items on days that would drop out of the run get deleted — ask first.
+  const keep = new Set(newDays.map(d => d.toDateString()));
+  const oldSched = saved.schedules || {};
+  const lost = Object.entries(oldSched).filter(([k]) => !keep.has(k)).reduce((n, [, items]) => n + (items || []).length, 0);
+  if (lost && !confirm(`${lost} schedule item${lost === 1 ? '' : 's'} on days you removed will be deleted. Continue?`)) return;
+
   saved.name = name;
-
-  if (startV) {
-    const start = parseLocalDate(startV);
-    const newDays = Array.from({ length: daysN }, (_, i) => {
-      const d = new Date(start); d.setDate(d.getDate() + i); return d;
-    });
-    const oldSched = saved.schedules || {};
-    const newSched = {};
-    newDays.forEach(d => {
-      const key = d.toDateString();
-      newSched[key] = oldSched[key] || [];
-    });
-    saved.days = newDays;
-    saved.schedules = newSched;
-  }
-
-  if (showV) saved.showDate = parseLocalDate(showV);
-  else if (showV === '') saved.showDate = null;
+  const newSched = {};
+  newDays.forEach(d => { const key = d.toDateString(); newSched[key] = oldSched[key] || []; });
+  saved.days = newDays;
+  saved.schedules = newSched;
+  saved.showDate = showDate;
 
   try { await saveShowState(showId, saved); } catch (e) { alert('Could not save: ' + (e.message || e)); return; }
   _showsCache[currentArtistId] = null;
@@ -3065,15 +3055,73 @@ async function submitEditShow(showId) {
   await renderArtistScreen(currentArtistId);
 }
 
+// ════════════════════════════════
+// RUN PICKER — one show date, plus travel days before / after
+// ════════════════════════════════
+const RUN_MAX = 14;
+function runPickerHTML(prefix, showDateStr, before, after) {
+  return `
+    <div class="field-group">
+      <label class="field-label" for="${prefix}-show">Show date</label>
+      <input type="date" id="${prefix}-show" value="${esc(showDateStr || '')}" oninput="updateRunPreview('${prefix}')">
+    </div>
+    <div class="run-box">
+      <div class="run-row">
+        <span>Arrive <b class="run-unit">days before</b></span>
+        <span class="stepper">
+          <button type="button" aria-label="Fewer days before" onclick="stepRun('${prefix}','before',-1)">−</button>
+          <output id="${prefix}-before">${before}</output>
+          <button type="button" aria-label="More days before" onclick="stepRun('${prefix}','before',1)">+</button>
+        </span>
+      </div>
+      <div class="run-row">
+        <span>Leave <b class="run-unit">days after</b></span>
+        <span class="stepper">
+          <button type="button" aria-label="Fewer days after" onclick="stepRun('${prefix}','after',-1)">−</button>
+          <output id="${prefix}-after">${after}</output>
+          <button type="button" aria-label="More days after" onclick="stepRun('${prefix}','after',1)">+</button>
+        </span>
+      </div>
+      <div class="run-preview" id="${prefix}-preview"></div>
+    </div>`;
+}
+function readRun(prefix) {
+  const showV = document.getElementById(prefix + '-show')?.value || '';
+  const before = parseInt(document.getElementById(prefix + '-before')?.textContent, 10) || 0;
+  const after = parseInt(document.getElementById(prefix + '-after')?.textContent, 10) || 0;
+  const showDate = showV ? parseLocalDate(showV) : null;
+  if (!showDate) return { showDate: null, days: [], before, after };
+  const days = Array.from({ length: before + after + 1 }, (_, i) => {
+    const d = new Date(showDate); d.setDate(d.getDate() - before + i); return d;
+  });
+  return { showDate, days, before, after };
+}
+function stepRun(prefix, which, delta) {
+  const el = document.getElementById(`${prefix}-${which}`);
+  if (!el) return;
+  el.textContent = Math.max(0, Math.min(RUN_MAX, (parseInt(el.textContent, 10) || 0) + delta));
+  updateRunPreview(prefix);
+}
+function updateRunPreview(prefix) {
+  const el = document.getElementById(prefix + '-preview');
+  if (!el) return;
+  const r = readRun(prefix);
+  if (!r.showDate) { el.textContent = 'Pick a show date'; return; }
+  const f = d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const n = r.days.length;
+  el.textContent = n === 1 ? `${f(r.showDate)} · show day only` : `${f(r.days[0])} – ${f(r.days[n - 1])} · ${n} days`;
+}
+
 async function showNewShowForm() {
   const artists = await getArtists();
   const artist = artists.find(a => a.id === currentArtistId);
-  document.getElementById('s-artist').value = artist ? artist.name : '';
-  document.getElementById('s-tm').value = artist ? (artist.tmName || myDisplayName()) : myDisplayName();
+  const forEl = document.getElementById('s-for');
+  forEl.innerHTML = artist
+    ? `For <b>${esc(artist.name)}</b>. Show day starts with a standard schedule and checklist.`
+    : 'Show day starts with a standard schedule and checklist.';
   document.getElementById('s-name').value = '';
-  document.getElementById('s-start').value = '';
-  document.getElementById('s-days').value = '3';
-  document.getElementById('s-show').value = '';
+  document.getElementById('s-run').innerHTML = runPickerHTML('s', '', 1, 1);
+  updateRunPreview('s');
   showScreen('setup-screen');
 }
 
@@ -3436,20 +3484,14 @@ const defaultTasks = [
 // LAUNCH (new show)
 // ════════════════════════════════
 async function launch() {
-  const name   = document.getElementById('s-name').value.trim();
-  const artist = document.getElementById('s-artist').value.trim();
-  const startV = document.getElementById('s-start').value;
-  const daysN  = parseInt(document.getElementById('s-days').value) || 1;
-  const showV  = document.getElementById('s-show').value;
-  const tmName  = document.getElementById('s-tm').value.trim();
-  if (!name || !startV) { alert('Please enter a show name and start date.'); return; }
+  const name = document.getElementById('s-name').value.trim();
+  const { showDate, days } = readRun('s');
+  if (!name) { alert('Give the show a name.'); document.getElementById('s-name').focus(); return; }
+  if (!showDate) { alert('Pick a show date.'); document.getElementById('s-show').focus(); return; }
   if (!currentArtistId) { alert('Pick an artist first.'); await goHome(); return; }
-
-  const start = parseLocalDate(startV);
-  const showDate = showV ? parseLocalDate(showV) : null;
-  const days = Array.from({ length: daysN }, (_, i) => {
-    const d = new Date(start); d.setDate(d.getDate() + i); return d;
-  });
+  const artistRow = (await getArtists()).find(a => a.id === currentArtistId);
+  const artist = artistRow ? artistRow.name : '';
+  const tmName = (artistRow && artistRow.tmName) || myDisplayName();
 
   const schedules = {};
   days.forEach(d => {
@@ -5215,7 +5257,7 @@ Object.assign(window, {
   applyPendingRemote,
   openExportModal, closeExportModal, generatePDF,
   toggleMenu, showMoreSheet, hideMoreSheet,
-  railPostNote, goToArtistTeam, setViewAs, allowBack, startOwnTeam, sendFeedback, closeFeedback, copyFeedbackEmail, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
+  railPostNote, goToArtistTeam, setViewAs, allowBack, startOwnTeam, stepRun, updateRunPreview, sendFeedback, closeFeedback, copyFeedbackEmail, openHistory, closeHistory, restoreVersion, openDeletedShows, restoreDeletedShow,
 });
 </script>
 </body>
