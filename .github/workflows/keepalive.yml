@@ -3,8 +3,7 @@
 # This calls a tiny keepalive() function once a day. If it ever fails,
 # GitHub emails you and the run shows a red X under the Actions tab.
 #
-# The key below is the PUBLISHABLE key — it's designed to be public.
-# Never put the secret / service_role key in this file.
+# The address + key come from the SB_OFFSTAGE secret in this repo's settings.
 
 name: Keep OFFSTAGE awake
 
@@ -20,9 +19,9 @@ jobs:
     steps:
       - name: Ping OFFSTAGE database
         env:
-          SUPABASE_URL: https://lminpwotfjkztdhyakcj.supabase.co
-          SUPABASE_KEY: sb_publishable_euixHakw36IYHCzszsgEwA_7zFdy7vr
+          SB: ${{ secrets.SB_OFFSTAGE }}
         run: |
+          SUPABASE_URL="${SB%%|*}"; SUPABASE_KEY="${SB#*|}"
           for attempt in 1 2 3; do
             if curl --silent --show-error --fail --max-time 30 \
                  -X POST "$SUPABASE_URL/rest/v1/rpc/keepalive" \
