@@ -244,6 +244,10 @@
   .flight-arrow { flex: 1; height: 1px; background: var(--border2); position: relative; min-width: 30px; }
   .flight-arrow::after { content: '✈'; position: absolute; right: -2px; top: -9px; color: var(--accent-ink); font-size: 13px; }
   .flight-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .go-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  a.go-btn { flex: 1 1 140px; min-width: 0; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; border-radius: var(--radius); background: var(--accent); color: var(--accent-text); font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: .05em; text-transform: uppercase; text-decoration: none; text-align: center; overflow-wrap: anywhere; }
+  a.go-btn.alt { background: var(--surface3); color: var(--text); border: 1px solid var(--border2); }
+  a.go-btn:hover { filter: brightness(1.12); }
   .flight-conf { color: var(--accent-ink); }
   .flight-actions { display: flex; gap: 4px; flex-shrink: 0; }
   .flight-edit-btn { background: none; border: none; color: var(--dim); font-size: 12px; cursor: pointer; padding: 3px 5px; border-radius: 4px; font-family: var(--mono); transition: color .15s; }
@@ -1380,7 +1384,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.05-1';
+const APP_VERSION = '2026.10.25-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -3881,6 +3885,50 @@ function mapLink(address) {
   const q = encodeURIComponent(address);
   return `<a href="https://maps.google.com/?q=${q}" target="_blank" rel="noopener" class="link-action">${esc(address)}</a>`;
 }
+// ── Live flight status + directions (links only — nothing is saved) ──
+const IS_APPLE_MOBILE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function flightCode(airline) {
+  const m = String(airline || '').toUpperCase().match(/\b([A-Z][A-Z0-9]|[0-9][A-Z])\s?(\d{1,4})\b/);
+  return m ? m[1] + m[2] : '';
+}
+function flightTrackHTML(f) {
+  const a = String(f.airline || '').trim();
+  if (!/\d/.test(a)) return '';                        // no flight number typed → no button
+  const code = flightCode(a);
+  const q = encodeURIComponent((code || a) + ' flight status');
+  return `<div class="go-row"><a class="go-btn" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Track ${esc(code || 'flight')} ↗</a></div>`;
+}
+function directionsURL(dest, origin) {
+  if (IS_APPLE_MOBILE) {
+    return 'https://maps.apple.com/?daddr=' + encodeURIComponent(dest) + (origin ? '&saddr=' + encodeURIComponent(origin) : '') + '&dirflg=d';
+  }
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest) + (origin ? '&origin=' + encodeURIComponent(origin) : '') + '&travelmode=driving';
+}
+function goBtn(label, dest, origin, alt) {
+  return `<a class="go-btn${alt ? ' alt' : ''}" href="${esc(directionsURL(dest, origin))}" target="_blank" rel="noopener">→ ${esc(label)}</a>`;
+}
+function localAirport() {
+  const fl = (state.flights || []).filter(f => (f.to || '').trim());
+  if (!fl.length) return '';
+  fl.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  return fl[0].to.trim().toUpperCase();
+}
+function lodgingGoHTML(l) {
+  const origin = (l.address || '').trim() || (l.name || '').trim();
+  if (!origin) return '';
+  const venues = (state.venues || []).filter(v => (v.address || '').trim());
+  const btns = [];
+  if (venues.length === 1) btns.push(goBtn('To venue', venues[0].address, origin));
+  else venues.slice(0, 3).forEach(v => btns.push(goBtn('To ' + (v.name || 'venue'), v.address, origin)));
+  const ap = localAirport();
+  if (ap) btns.push(goBtn('To ' + ap + ' airport', ap + ' airport', origin, true));
+  return btns.length ? `<div class="go-row">${btns.join('')}</div>` : '';
+}
+function venueGoHTML(v) {
+  const dest = (v.address || '').trim();
+  return dest ? `<div class="go-row">${goBtn('Directions', dest, '')}</div>` : '';
+}
+
 function smartContactLink(val) {
   if (!val) return '';
   const v = val.trim();
@@ -3933,6 +3981,7 @@ function renderLocations() {
         ${locFieldFull('Stage specs', v.stage)}
       </div>
       ${v.notes ? `<div class="loc-notes">${esc(v.notes)}</div>` : ''}
+      ${venueGoHTML(v)}
     </div>`;
     let html = '', lastDay = '\u0000';
     const multipleDays = (state.days||[]).length > 1;
@@ -3963,6 +4012,7 @@ function renderLocations() {
         ${locFieldFull('Confirmation #', l.conf)}
       </div>
       ${l.notes ? `<div class="loc-notes">${esc(l.notes)}</div>` : ''}
+      ${lodgingGoHTML(l)}
     </div>`).join('') : '<div class="empty-state">No lodging added yet.</div>';
 }
 
@@ -4866,6 +4916,7 @@ function flightCardHTML(f) {
       </div>
     </div>
     ${(f.conf || f.note) ? `<div class="flight-meta">${f.conf ? `<span class="flight-conf">Conf: ${esc(f.conf)}</span>` : ''}${f.conf && f.note ? ' · ' : ''}${esc(f.note)}</div>` : ''}
+    ${flightTrackHTML(f)}
   </div>`;
 }
 
