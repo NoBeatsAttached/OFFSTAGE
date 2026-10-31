@@ -54,6 +54,7 @@
   .danger-zone span { font-size: 12px; color: var(--dim); }
   .readonly .danger-zone { display: none !important; }
   .not-owner .owner-only { display: none !important; }
+  body:not(.not-owner) .member-only { display: none !important; }
   .no-create #btn-new-artist, .no-create #new-artist-form { display: none !important; }
   body:not(.no-create) .create-only-hidden { display: none !important; }
   .own-team { margin-top: 1.5rem; padding: 16px; border: 1px dashed var(--border2); border-radius: 14px; }
@@ -906,6 +907,7 @@
         <button class="create-only-hidden" onclick="startOwnTeam()">Start your own team</button>
         <button onclick="sendFeedback()">Feedback</button>
         <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
+        <button class="danger member-only" onclick="leaveTeam()">Leave this team</button>
         <button onclick="logout()">Sign out</button>
       </div>
     </div>
@@ -1384,7 +1386,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.31-1';
+const APP_VERSION = '2026.10.31-2';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -2881,6 +2883,23 @@ async function removeMember(userId) {
     must(await sb.from('artist_members').delete().eq('artist_id', currentArtistId).eq('user_id', userId), 'Remove member');
   } catch (e) { alert(e.message); return; }
   await renderTeam();
+}
+
+// Leave a team yourself. (The owner can't leave — they delete the artist instead.)
+// Leaving is not the same as being removed: a TM can send a new link later.
+async function leaveTeam() {
+  closeMenus();
+  const artistId = currentArtistId;
+  if (!artistId || ownerOf(artistId) === myUid) return;
+  const a = (_artistsCache || []).find(x => x.id === artistId);
+  const name = a ? a.name : 'this team';
+  if (!confirm(`Leave ${name}?\n\nYou'll lose access to its shows right away. The TM can send you a new invite link if you want back in.`)) return;
+  try {
+    must(await sb.from('artist_members').delete().eq('artist_id', artistId).eq('user_id', myUid), 'Leave team');
+  } catch (e) { alert(e.message); return; }
+  bustAllCaches();
+  await loadMyRoles();
+  await goHome();
 }
 
 // ════════════════════════════════
@@ -5289,7 +5308,7 @@ function buildPDF() {
 // ════════════════════════════════
 Object.assign(window, {
   signInWithGoogle, logout,
-  showNewArtistForm, hideNewArtistForm, submitNewArtist, deleteArtist, deleteCurrentArtist, openArtist,
+  showNewArtistForm, hideNewArtistForm, submitNewArtist, deleteArtist, deleteCurrentArtist, openArtist, leaveTeam,
   showEditArtistForm, hideEditArtistForm, submitEditArtist,
   toggleTeamPanel, createInvite, copyInvite, revokeInvite, removeMember,
   showNewShowForm, setupBack, deleteShow, deleteCurrentShow, openShow,
