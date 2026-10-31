@@ -850,6 +850,7 @@
     <div class="menu-wrap">
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
+        <button class="create-only-hidden" onclick="startOwnTeam()">Start your own team</button>
         <button onclick="downloadBackup(this)">Download backup</button>
         <button onclick="sendFeedback()">Feedback</button>
         <button onclick="logout()">Sign out</button>
@@ -898,6 +899,7 @@
       <button class="icon-btn" aria-label="More options" onclick="toggleMenu(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       <div class="menu-pop">
         <button class="tm-only" onclick="showEditArtistForm()">Edit artist</button>
+        <button class="create-only-hidden" onclick="startOwnTeam()">Start your own team</button>
         <button onclick="sendFeedback()">Feedback</button>
         <button class="danger owner-only" onclick="deleteCurrentArtist()">Delete artist</button>
         <button class="danger member-only" onclick="leaveTeam()">Leave this team</button>
@@ -1379,7 +1381,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.31-3';
+const APP_VERSION = '2026.10.31-4';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
