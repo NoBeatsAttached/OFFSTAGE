@@ -1384,7 +1384,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.25-1';
+const APP_VERSION = '2026.10.31-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -1747,9 +1747,23 @@ async function handleAuthSuccess(user) {
   const pending = getPendingInvite();
   if (pending) {
     clearPendingInvite();
-    const { data, error } = await sb.rpc('redeem_invite', { p_token: pending });
-    if (error) alert('Invite link problem: ' + error.message);
-    else joinedArtistId = data;
+    // Ask before joining — nobody gets added to a team just by tapping a link.
+    let question = 'You opened an OFFSTAGE invite link.\n\nJoin this team?';
+    let valid = true;
+    try {
+      const pv = await sb.rpc('invite_preview', { p_token: pending });
+      if (!pv.error) {
+        const row = Array.isArray(pv.data) ? pv.data[0] : pv.data;
+        if (row && row.artist_name) question = `Join ${row.artist_name} as ${roleLabel(row.role)}?\n\nThey'll be able to see your name and email.`;
+        else valid = false;
+      }
+    } catch { /* preview not installed yet → generic question */ }
+    if (!valid) alert('This invite link is invalid or has expired. Ask the tour manager for a new one.');
+    else if (confirm(question)) {
+      const { data, error } = await sb.rpc('redeem_invite', { p_token: pending });
+      if (error) alert('Invite link problem: ' + error.message);
+      else joinedArtistId = data;
+    }
   }
 
   bustAllCaches();
@@ -2820,7 +2834,7 @@ async function renderTeam() {
     const p = m.profile || {};
     const name = p.display_name || p.email || 'Unknown';
     const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
-    const av = /^https:\/\//.test(p.avatar_url || '') ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">` : esc(initials);
+    const av = /^https:\/\/[a-z0-9-]+\.googleusercontent\.com\/[^\s"'<>]*$/i.test(p.avatar_url || '') ? `<img src="${esc(p.avatar_url)}" alt="" referrerpolicy="no-referrer">` : esc(initials);
     const isMe = m.user_id === myUid;
     const isOwner = m.user_id === ownerOf(currentArtistId);
     return `<div class="team-row">
@@ -3355,7 +3369,7 @@ async function openHistory() {
   list.innerHTML = _histRows.map((r, i) => `
     <div class="hist-row">
       <div class="hist-main">
-        <span class="hist-when">${esc(fmtWhen(r.changed_at))}${(r.audience && r.audience !== 'all') ? `<span class="aud-chip aud-${r.audience === 'tm' ? 'crew' : r.audience}">${r.audience === 'artist' ? 'ARTIST ONLY' : r.audience === 'crew' ? 'CREW ONLY' : 'TASKS'}</span>` : ''}</span>
+        <span class="hist-when">${esc(fmtWhen(r.changed_at))}${['artist', 'crew', 'tm'].includes(r.audience) ? `<span class="aud-chip aud-${r.audience === 'artist' ? 'artist' : 'crew'}">${r.audience === 'artist' ? 'ARTIST ONLY' : r.audience === 'crew' ? 'CREW ONLY' : 'TASKS'}</span>` : ''}</span>
         <span class="hist-what">${esc(AUD_PART_LABEL[r.audience || 'all'])} · before ${esc(nameFor(r.changed_by))}'s change · ${esc(histSummary(r.state, r.audience))}</span>
       </div>
       <button class="pill-btn" onclick="restoreVersion(${i})">Restore</button>
