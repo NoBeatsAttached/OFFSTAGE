@@ -17,12 +17,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0e0d0c; --surface: #1a1816; --surface2: #1f1c1a; --surface3: #2b2825;
-    --border: #2b2825; --border2: #3a3632; --text: #f2eee8; --muted: #a8a29b; --dim: #8a847d;
-    --accent: #6b3fa6;                       /* OFFSTAGE brand purple — fills, wordmark, borders */
-    --accent-ink: #ae95ce;                   /* same purple, lightened — for small text on black */
-    --accent-dim: rgba(107,63,166,0.24); --accent-text: #ffffff;   /* accent-text = text ON purple */
-    --rail: #141210;
+    --bg: #141414; --surface: #1c1c1c; --surface2: #222222; --surface3: #2c2c2c;
+    --border: #2c2c2c; --border2: #3a3a3a; --text: #e8e8e8; --muted: #a3a3a3; --dim: #8c8c8c;
+    --accent: #7e49b3;                       /* OFFSTAGE brand purple — fills, wordmark, borders */
+    --accent-ink: #b691dd;                   /* same purple, lightened — for small text on black */
+    --accent-dim: rgba(126,73,179,0.24); --accent-text: #ffffff;   /* accent-text = text ON purple */
+    --rail: #0f0f0f;
     --blue: #4a9eff; --blue-dim: rgba(74,158,255,0.12);
     --amber: #ffb347; --amber-dim: rgba(255,179,71,0.12);
     --purple: #d98aff; --purple-dim: rgba(217,138,255,0.12);
@@ -167,7 +167,7 @@
   .loc-card-name { font-size: 15px; font-weight: 600; }
   .venue-day-header { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
   .venue-day-header:first-child { margin-top: 0; }
-  .rider-banner { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); background: rgba(107,63,166,0.16); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; margin-bottom: 1rem; }
+  .rider-banner { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); background: rgba(126,73,179,0.16); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; margin-bottom: 1rem; }
   .rider-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .rider-item:last-child { border-bottom: none; }
   .rider-item .ri-text { flex: 1; font-size: 14px; }
@@ -180,7 +180,7 @@
   .loc-field-val { font-size: 13px; color: var(--text); }
 
   /* Tappable link styling */
-  a.link-action { color: var(--accent-ink); text-decoration: none; border-bottom: 1px dashed rgba(174,149,206,0.45); padding-bottom: 1px; }
+  a.link-action { color: var(--accent-ink); text-decoration: none; border-bottom: 1px dashed rgba(182,145,221,0.45); padding-bottom: 1px; }
   a.link-action:hover { border-bottom-style: solid; }
   a.link-action:active { opacity: 0.6; }
   .contact-sms { display: inline-block; margin-left: 6px; text-decoration: none; font-size: 13px; opacity: 0.7; }
@@ -499,7 +499,7 @@
   .note-reactions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .note-react { background: transparent; border: 1px solid var(--border); border-radius: 12px; padding: 3px 9px; font-size: 13px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; gap: 5px; line-height: 1.4; font-family: inherit; }
   .note-react:hover { border-color: var(--accent); }
-  .note-react.active { background: rgba(107,63,166,0.28); border-color: var(--accent); }
+  .note-react.active { background: rgba(126,73,179,0.28); border-color: var(--accent); }
   .note-react .rc { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 600; }
   .note-react.active .rc { color: var(--accent-ink); }
   .note-reactors { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px; line-height: 1.4; }
@@ -567,7 +567,7 @@
   /* ════════════════════════════════════════════════════════════
      ROAD CASE — OFFSTAGE visual system (2026.09.30)
      Display: Big Shoulders · Body: IBM Plex Sans · Tags: DM Mono
-     Brand purple #6b3fa6 (--accent). Small purple text uses
+     Brand purple #7e49b3 (--accent). Small purple text uses
      --accent-ink so it stays readable on black.
      RULE: nothing on any screen ever scrolls sideways.
      ════════════════════════════════════════════════════════════ */
@@ -590,21 +590,21 @@
   .boot-mark { font-family: var(--display); font-weight: 900; font-size: 40px; color: var(--accent); letter-spacing: .02em; }
   #login-screen { justify-content: center; padding: 2rem 1.5rem calc(2rem + env(safe-area-inset-bottom)); position: relative; overflow: hidden; }
   #g-btn { justify-content: flex-start !important; }
-  #login-screen::before { content: 'OFF'; position: absolute; top: -40px; right: -120px; font-family: var(--display); font-weight: 900; font-size: 280px; line-height: .8; color: #171514; letter-spacing: -4px; transform: rotate(-90deg); transform-origin: top right; pointer-events: none; }
+  #login-screen::before { content: 'OFF'; position: absolute; top: -40px; right: -120px; font-family: var(--display); font-weight: 900; font-size: 280px; line-height: .8; color: #1a1a1a; letter-spacing: -4px; transform: rotate(-90deg); transform-origin: top right; pointer-events: none; }
   .login-box { position: relative; max-width: 380px; }
   .login-kicker { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .18em; color: var(--muted); margin-bottom: 2.5rem; }
   .login-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
   .login-mark { font-family: var(--display); font-weight: 900; font-size: 88px; line-height: .86; letter-spacing: -1px; color: var(--accent); margin: 0 0 1.5rem; }
   .login-title { font-size: 28px; margin-bottom: 6px; }
-  .login-sub { font-size: 16px; color: #bdb6ad; margin-bottom: 1.75rem; }
+  .login-sub { font-size: 16px; color: #b5b5b5; margin-bottom: 1.75rem; }
 
   /* Top bar: fixed pieces only, extras live in the ⋯ menu */
   .topbar { background: var(--bg); border-bottom: 1px solid var(--border); overflow: visible; gap: 8px; }
   .topbar-title { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--surface); color: #d6d0c8; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--surface); color: #cfcfcf; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; }
   .icon-btn:hover { background: var(--surface3); }
   .topbar-today { height: 36px; padding: 0 14px; border-radius: 18px; font-size: 12px; letter-spacing: .08em; font-weight: 500; text-transform: uppercase; }
-  .pill-btn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--border2); background: transparent; color: #d6d0c8; font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .pill-btn { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--border2); background: transparent; color: #cfcfcf; font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
   .pill-btn:hover { border-color: var(--accent-ink); color: var(--text); }
   .menu-wrap { position: relative; flex-shrink: 0; }
   .menu-pop { display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; max-width: calc(100vw - 32px); background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; padding: 6px; z-index: 300; box-shadow: 0 12px 32px rgba(0,0,0,.55); }
@@ -671,7 +671,7 @@
   /* Day chips wrap on phones */
   .day-tabs { flex-wrap: wrap; }
   .dtab { min-height: 36px; padding: 0 14px; border-radius: 18px; font-family: var(--font); font-size: 13px; }
-  .dtab.active { background: var(--text); color: #0e0d0c; border-color: var(--text); font-weight: 600; }
+  .dtab.active { background: var(--text); color: #141414; border-color: var(--text); font-weight: 600; }
 
   /* Schedule rows */
   .sched-time { font-size: 13px; min-width: 58px; }
@@ -721,14 +721,14 @@
   .sb-artist-name { font-size: 14px; font-weight: 600; display: block; }
   .sb-artist-sub { font-size: 12px; color: var(--muted); display: block; }
   .sb-label { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--dim); padding: 0 10px 6px; }
-  .sb-show { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 10px; border-radius: 8px; border: none; background: none; color: #d6d0c8; font-size: 14px; cursor: pointer; text-align: left; }
+  .sb-show { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 10px; border-radius: 8px; border: none; background: none; color: #cfcfcf; font-size: 14px; cursor: pointer; text-align: left; }
   .sb-show:hover { background: var(--surface); }
-  .sb-show.active { background: #231a30; color: var(--text); font-weight: 600; }
+  .sb-show.active { background: #271c33; color: var(--text); font-weight: 600; }
   .sb-show-date { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 48px; flex-shrink: 0; }
   .sb-show.active .sb-show-date { color: var(--accent-ink); }
-  .sb-new { margin-top: 4px; min-height: 40px; width: 100%; border-radius: 8px; border: 1.5px dashed var(--border2); background: transparent; color: #bdb6ad; font-size: 13px; cursor: pointer; }
+  .sb-new { margin-top: 4px; min-height: 40px; width: 100%; border-radius: 8px; border: 1.5px dashed var(--border2); background: transparent; color: #b5b5b5; font-size: 13px; cursor: pointer; }
   .sb-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
-  .sb-foot button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border-radius: 8px; border: none; background: none; color: #d6d0c8; font-size: 14px; cursor: pointer; text-align: left; }
+  .sb-foot button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border-radius: 8px; border: none; background: none; color: #cfcfcf; font-size: 14px; cursor: pointer; text-align: left; }
   .sb-foot button:hover { background: var(--surface); }
   .rail-next { background: var(--accent); color: var(--accent-text); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
   .rail-next .rn-label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; font-weight: 500; }
@@ -1381,7 +1381,7 @@ function clearPendingInvite() { try { localStorage.removeItem(INVITE_KEY); } cat
 // ════════════════════════════════
 // APP VERSION — bump any time the file changes. Format: YYYY.MM.DD-N
 // ════════════════════════════════
-const APP_VERSION = '2026.10.31-4';
+const APP_VERSION = '2026.11.01-1';
 (function checkAppVersion() {
   try {
     const seen = localStorage.getItem('offstage-app-version');
@@ -5116,7 +5116,7 @@ function buildPDF() {
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{font-family:'DM Sans',sans-serif;font-size:13px;color:#1a1a1a;background:#ffffff;padding:40px;max-width:720px;margin:0 auto}
-  h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#6b3fd4}
+  h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#7e49b3}
   .meta{font-size:12px;color:#666;margin-bottom:32px;font-family:'DM Mono',monospace}
   h3{font-size:14px;font-weight:600;margin:20px 0 8px;color:#1a1a1a}
   .row{display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid #e2e2e2}
@@ -5125,14 +5125,14 @@ function buildPDF() {
   .body{flex:1}
   .title{font-size:13px;font-weight:500;margin-bottom:2px;color:#1a1a1a}
   .sub{font-size:11px;color:#666}
-  .badge{display:inline-block;font-size:9px;font-family:'DM Mono',monospace;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:6px;background:#ede7fb;color:#6b3fd4;vertical-align:middle}
+  .badge{display:inline-block;font-size:9px;font-family:'DM Mono',monospace;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:6px;background:#efe7f7;color:#7e49b3;vertical-align:middle}
   .contact-card{border:1px solid #ccc;border-radius:8px;padding:10px 12px;background:#f7f7f9}
   .contact-name{font-weight:500;font-size:13px;color:#1a1a1a}
   .contact-role{font-size:11px;color:#666;margin-bottom:4px}
   .contact-phone{font-family:'DM Mono',monospace;font-size:11px;color:#333}
   .task-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e2e2e2}
   .task-check{width:14px;height:14px;border:1.5px solid #999;border-radius:3px;flex-shrink:0}
-  .task-done .task-check{background:#6b3fd4;border-color:#6b3fd4}
+  .task-done .task-check{background:#7e49b3;border-color:#7e49b3}
   .task-done .task-label{text-decoration:line-through;color:#999}
   .task-label{font-size:13px;color:#1a1a1a}
   .task-day{font-size:10px;color:#888;font-family:'DM Mono',monospace;margin-left:auto}
@@ -5152,7 +5152,7 @@ function buildPDF() {
   }
   .loc-block { margin-bottom: 18px; }
   h2 { font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:.1em;
-       color:#6b3fd4; margin:34px 0 14px; border-bottom:2px solid #6b3fd4; padding-bottom:8px; }
+       color:#7e49b3; margin:34px 0 14px; border-bottom:2px solid #7e49b3; padding-bottom:8px; }
   h2:first-of-type { margin-top:0; }
   .day-table { width:100%; border-collapse:collapse; margin-bottom:18px; }
   .day-table thead { display:table-header-group; }
