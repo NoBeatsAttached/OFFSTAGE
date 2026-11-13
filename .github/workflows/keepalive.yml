@@ -9,7 +9,8 @@ name: Keep OFFSTAGE awake
 
 on:
   schedule:
-    - cron: "17 13 * * *"   # every day, ~9:17am New York time
+    - cron: "17 13 * * *"   # every morning
+    - cron: "47 1 * * *"    # and every night
   workflow_dispatch:         # adds a "Run workflow" button for testing
 
 jobs:
@@ -28,6 +29,12 @@ jobs:
                  -H "apikey: $SUPABASE_KEY" \
                  -H "Content-Type: application/json" \
                  -d '{}'; then
+              echo ""
+              # Also run a real table read + auth check so Supabase counts it as activity
+              curl --silent --show-error --max-time 30 "$SUPABASE_URL/rest/v1/artists?select=id&limit=1" \
+                -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" || true
+              echo ""
+              curl --silent --show-error --max-time 30 "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_KEY" || true
               echo ""
               echo "OFFSTAGE is awake."
               exit 0
